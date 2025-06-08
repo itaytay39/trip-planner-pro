@@ -4,12 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>הטיולים שלי</title>
-    <!-- קישור לקובץ המניפסט (חיוני עבור PWA) -->
     <link rel="manifest" href="/manifest.json">
-    <!-- צבע ערכת הנושא של הדפדפן -->
     <meta name="theme-color" content="#4A90E2">
-    <!-- אייקון למסך הבית של iOS (אפל) - השתמש באייקון מודרני 2025 -->
-    <link rel="apple-touch-icon" href="/icons/app-icon-180x180.png">
+    <link rel="apple-touch-icon" href="/icons/icon-192x192.png">
     <style>
         /* Base Styles & Typography (Inter font as requested, or similar sans-serif) */
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
@@ -846,7 +843,6 @@
                             כאן יוצגו הצעות כמו:
                             <br>• מסעדות בקרבת מקום לארוחת צהריים.
                             <br>• אטרקציה קרובה שטרם ביקרתם בה.
-                            <br>• תחבורה מומלצת ליעד הבא במסלול.
                             <br>• • אירועים מיוחדים המתקיימים היום באזורך.
                         </p>
                     </div>
@@ -929,13 +925,12 @@
         </div>
     </div>
 
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js"></script>
     <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBrnqOiCt-0DizYiXxb73BDGDDLUn1Zdds&libraries=places&callback=initMap"></script>
     <script>
         // --- החלק החשוב ביותר: הגדרות Firebase שלך ---
-        // 1. קונפיגורציית Firebase
         const firebaseConfig = {
             apiKey: "AIzaSyB11HU1nmZwjY5sGQjyyWud_stNoqEwsi4",
             authDomain: "mytravelapp2025.firebaseapp.com",
@@ -958,6 +953,7 @@
         // Firebase Initialization
         if (firebaseConfig && Object.keys(firebaseConfig).length > 0 && firebaseConfig.apiKey) {
             app = firebase.initializeApp(firebaseConfig);
+            // Access services directly from the firebase object (compat SDK)
             db = firebase.firestore(); 
             auth = firebase.auth();
             console.log("Firebase initialized successfully.");
@@ -969,14 +965,14 @@
         // --- Core App Logic ---
         document.addEventListener('DOMContentLoaded', () => {
             if (auth && db) {
-                auth.onAuthStateChanged(user => { // Corrected: auth.onAuthStateChanged
+                firebase.auth().onAuthStateChanged(user => {
                     if (user) {
                         userId = user.uid;
                         console.log("Firebase Authenticated User:", userId);
                         loadTrips();
                     } else {
                         console.log("No user, signing in anonymously...");
-                        auth.signInAnonymously() // Corrected: auth.signInAnonymously()
+                        firebase.auth().signInAnonymously()
                             .then(userCredential => {
                                 userId = userCredential.user.uid;
                                 console.log("Signed in anonymously:", userId);
@@ -998,7 +994,7 @@
 
         async function loadTrips() {
             document.getElementById('user-id-display').textContent = `מזהה משתמש: ${userId}`;
-            const collectionPath = `artifacts/pwa-travel-app/users/${userId}/trips`;
+            const collectionPath = `artifacts/pwa-travel-app/users/${userId}/trips`; // Firestore path
             const userDocRef = db.collection(collectionPath).doc('userTrips');
             try {
                 const docSnap = await userDocRef.get();
@@ -1087,7 +1083,7 @@
 
         async function saveTrips() {
             if (userId && db && currentTrips.length > 0) {
-                const collectionPath = `artifacts/pwa-travel-app/users/${userId}/trips`;
+                const collectionPath = `artifacts/pwa-travel-app/users/${userId}/trips`; // Firestore path
                 const userDocRef = db.collection(collectionPath).doc('userTrips');
                 try {
                     await userDocRef.set({ allTrips: currentTrips });
@@ -1208,6 +1204,8 @@
 
         window.initMap = function() {
             console.log("Google Maps API callback triggered.");
+            // Ensure map is initialized only if the element is visible and present.
+            // Also, ensure DOM is fully loaded.
             if (document.readyState === 'complete' || document.readyState === 'interactive') {
                 if (document.getElementById('itinerary-screen').style.display === 'block') {
                     renderItinerary();
@@ -1632,6 +1630,8 @@
         // --- Helper for Google Maps API loading ---
         window.initMap = function() {
             console.log("Google Maps API callback triggered.");
+            // Ensure map is initialized only if the element is visible and present.
+            // Also, ensure DOM is fully loaded.
             if (document.readyState === 'complete' || document.readyState === 'interactive') {
                 if (document.getElementById('itinerary-screen').style.display === 'block') {
                     renderItinerary();
