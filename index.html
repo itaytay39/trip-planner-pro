@@ -926,12 +926,13 @@
         </div>
     </div>
 
-    <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
     <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBrnqOiCt-0DizYiXxb73BDGDDLUn1Zdds&libraries=places&callback=initMap"></script>
     <script>
         // --- החלק החשוב ביותר: הגדרות Firebase שלך ---
+        // 1. קונפיגורציית Firebase
         const firebaseConfig = {
             apiKey: "AIzaSyB11HU1nmZwjY5sGQjyyWud_stNoqEwsi4",
             authDomain: "mytravelapp2025.firebaseapp.com",
@@ -954,8 +955,7 @@
         // Firebase Initialization
         if (firebaseConfig && Object.keys(firebaseConfig).length > 0 && firebaseConfig.apiKey) {
             app = firebase.initializeApp(firebaseConfig);
-            // Access services directly from the firebase object (compat SDK)
-            db = firebase.firestore();
+            db = firebase.firestore(); 
             auth = firebase.auth();
             console.log("Firebase initialized successfully.");
         } else {
@@ -966,14 +966,14 @@
         // --- Core App Logic ---
         document.addEventListener('DOMContentLoaded', () => {
             if (auth && db) {
-                firebase.auth().onAuthStateChanged(user => {
+                auth.onAuthStateChanged(user => { // Corrected: auth.onAuthStateChanged
                     if (user) {
                         userId = user.uid;
                         console.log("Firebase Authenticated User:", userId);
                         loadTrips();
                     } else {
                         console.log("No user, signing in anonymously...");
-                        firebase.auth().signInAnonymously()
+                        auth.signInAnonymously() // Corrected: auth.signInAnonymously()
                             .then(userCredential => {
                                 userId = userCredential.user.uid;
                                 console.log("Signed in anonymously:", userId);
@@ -995,7 +995,6 @@
 
         async function loadTrips() {
             document.getElementById('user-id-display').textContent = `מזהה משתמש: ${userId}`;
-            // For PWA running locally/on GitHub Pages, use a static collection path
             const collectionPath = `artifacts/pwa-travel-app/users/${userId}/trips`;
             const userDocRef = db.collection(collectionPath).doc('userTrips');
             try {
@@ -1630,68 +1629,23 @@
         // --- Helper for Google Maps API loading ---
         window.initMap = function() {
             console.log("Google Maps API callback triggered.");
-            // Only render itinerary if that screen is currently active/visible
-            if (document.getElementById('itinerary-screen').style.display === 'block') {
-                renderItinerary();
+            if (document.readyState === 'complete' || document.readyState === 'interactive') {
+                if (document.getElementById('itinerary-screen').style.display === 'block') {
+                    renderItinerary();
+                }
+            } else {
+                document.addEventListener('DOMContentLoaded', () => {
+                    if (document.getElementById('itinerary-screen').style.display === 'block') {
+                        renderItinerary();
+                    }
+                });
             }
         };
 
-        // Initialize listeners and set default screen after DOM is fully loaded
-        document.addEventListener('DOMContentLoaded', () => {
-            // Set initial active navigation button
-            navigateTo('itinerary'); 
+        // Initially render itinerary screen and activate its button
+        navigateTo('itinerary');
 
-            // Handle modals close buttons
-            document.querySelectorAll('.close-button').forEach(button => {
-                button.onclick = (event) => {
-                    const modal = event.target.closest('.modal');
-                    if (modal) modal.classList.remove('modal-show');
-                };
-            });
 
-            // Handle clicking outside modal to close
-            document.querySelectorAll('.modal-overlay').forEach(overlay => {
-                overlay.onclick = (event) => {
-                    if (event.target === overlay) {
-                        event.target.closest('.modal').classList.remove('modal-show');
-                    }
-                };
-            });
-
-            // Firebase Initialization and User Loading
-            if (firebaseConfig && Object.keys(firebaseConfig).length > 0 && firebaseConfig.apiKey) {
-                app = firebase.initializeApp(firebaseConfig);
-                db = firebase.firestore();
-                auth = firebase.auth();
-                console.log("Firebase initialized successfully.");
-
-                firebase.auth().onAuthStateChanged(user => {
-                    if (user) {
-                        userId = user.uid;
-                        console.log("Firebase Authenticated User:", userId);
-                        loadTrips();
-                    } else {
-                        console.log("No user, signing in anonymously...");
-                        firebase.auth().signInAnonymously()
-                            .then(userCredential => {
-                                userId = userCredential.user.uid;
-                                console.log("Signed in anonymously:", userId);
-                                loadTrips();
-                            })
-                            .catch(error => {
-                                console.error("Firebase Anonymous Auth Error:", error);
-                                alert("שגיאת התחברות ל-Firebase: לא ניתן היה להתחבר. אנא בדוק את החיבור שלך ואת כללי האבטחה של Firebase.");
-                                document.getElementById('loading-state').innerHTML = `<p class="loading-text" style="color: red;">שגיאת התחברות: לא ניתן היה להתחבר ל-Firebase.</p>`;
-                            });
-                    }
-                });
-            } else {
-                console.error("Firebase config is missing or empty. Firebase will not be initialized.");
-                document.getElementById('loading-state').innerHTML = `<p class="loading-text" style="color: red;">שגיאת Firebase: קונפיגורציה חסרה. אנא מלא את firebaseConfig בקוד.</p>`;
-                document.getElementById('main-app-content').style.display = 'none';
-                document.getElementById('empty-state').style.display = 'flex';
-            }
-        });
     </script>
 </body>
 </html>
