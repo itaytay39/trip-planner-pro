@@ -713,35 +713,23 @@
 </head>
 <body>
     <div class="container" id="app-container">
-        <!-- Loading State -->
         <div class="loading-container" id="loading-state">
             <div class="spinner"></div>
-            <p class="loading-text">טוען טיולים...</p> <!-- Text updated -->
-        </div>
+            <p class="loading-text">טוען טיולים...</p> </div>
 
-        <!-- Empty State (No Trips) -->
         <div class="empty-state" id="empty-state" style="display: none;">
             <p class="empty-state-text">אין טיולים מוגדרים. התחל עכשיו!</p>
             <button class="add-button" onclick="showNewTripModal()">הוסף טיול ראשון</button>
         </div>
 
-        <!-- Main App Content -->
         <div id="main-app-content" style="display: none;">
-            <!-- Header with Trip Picker -->
             <div class="header">
                 <h1 class="header-title">הטיולים שלי</h1>
                 <select class="trip-picker" id="trip-picker" onchange="handleTripPickerChange()">
-                    <!-- Options will be populated by JS -->
-                </select>
+                    </select>
                 <a href="#" class="header-button" onclick="showNewTripModal()">+</a>
             </div>
 
-            <!-- User ID Display (removed as not needed without Firebase Auth) -->
-            <!-- <div class="user-id-container">
-                <p class="user-id-text" id="user-id-display">מזהה משתמש: טוען...</p>
-            </div> -->
-
-            <!-- Navigation Tabs -->
             <div class="nav-container">
                 <button class="nav-button" data-screen="itinerary" onclick="navigateTo('itinerary')">
                     <span class="nav-button-text">מסלול</span>
@@ -760,9 +748,7 @@
                 </button>
             </div>
 
-            <!-- Main Content Area -->
             <div class="content-area">
-                <!-- Itinerary Screen -->
                 <div class="section" id="itinerary-screen">
                     <h2 class="section-title">מסלול טיול - <span id="itinerary-trip-name"></span></h2>
                     <p class="section-subtitle"><span id="itinerary-trip-dates"></span></p>
@@ -788,7 +774,6 @@
                     <p class="footnote-text">*המלצות בזמן אמת דורשות הפעלת GPS וחיבור ל-Google Places API.</p>
                 </div>
 
-                <!-- Budget Screen -->
                 <div class="section" id="budget-screen" style="display: none;">
                     <h2 class="section-title">תקציב - <span id="budget-trip-name"></span></h2>
                     <div class="budget-summary-card">
@@ -806,7 +791,6 @@
                         </div>
                 </div>
 
-                <!-- Packing List Screen -->
                 <div class="section" id="packing-screen" style="display: none;">
                     <h2 class="section-title">רשימת ציוד - <span id="packing-trip-name"></span></h2>
                     <p class="section-subtitle">סמן פריטים שארוזים</p>
@@ -815,7 +799,6 @@
                     <button class="add-button" onclick="showAddPackingItemModal()">הוסף פריט</button>
                 </div>
 
-                <!-- Debts Screen -->
                 <div class="section" id="debts-screen" style="display: none;">
                     <h2 class="section-title">תזכורות חובות - <span id="debts-trip-name"></span></h2>
                     <p class="section-subtitle">עקוב אחר מי חייב למי</p>
@@ -824,7 +807,6 @@
                     <button class="add-button" onclick="showAddDebtModal()">הוסף חוב חדש</button>
                 </div>
 
-                <!-- What's Next Screen -->
                 <div class="section" id="whatsNext-screen" style="display: none;">
                     <h2 class="section-title">מה הלאה? המלצות חכמות</h2>
                     <p class="section-subtitle">האפליקציה תציע כאן פעילויות מומלצות בהתבסס על מיקומך, שעת היום ומסלול הטיול.</p>
@@ -843,8 +825,6 @@
         </div>
     </div>
 
-    <!-- Modals -->
-    <!-- New Trip Modal -->
     <div id="new-trip-modal" class="modal">
         <div class="modal-overlay">
             <div class="modal-content-dialog">
@@ -859,7 +839,6 @@
         </div>
     </div>
 
-    <!-- Add Expense Modal -->
     <div id="add-expense-modal" class="modal">
         <div class="modal-overlay">
             <div class="modal-content-dialog">
@@ -888,7 +867,6 @@
         </div>
     </div>
 
-    <!-- Add Packing Item Modal -->
     <div id="add-packing-item-modal" class="modal">
         <div class="modal-overlay">
             <div class="modal-content-dialog">
@@ -901,7 +879,6 @@
         </div>
     </div>
 
-    <!-- Add Debt Modal -->
     <div id="add-debt-modal" class="modal">
         <div class="modal-overlay">
             <div class="modal-content-dialog">
@@ -916,14 +893,33 @@
         </div>
     </div>
 
-    <!-- Google Maps API (no change) -->
+    <script>
+        // Define initMap globally to ensure it's available when Google Maps API calls it
+        window.initMap = function() {
+            console.log("Google Maps API callback triggered.");
+            // Check if app content is visible before rendering map, or wait for DOMContentLoaded
+            if (document.getElementById('itinerary-screen') && document.getElementById('itinerary-screen').style.display === 'block') {
+                renderItinerary();
+            } else {
+                // If the screen isn't visible yet, wait for DOMContentLoaded or navigation
+                document.addEventListener('DOMContentLoaded', () => {
+                    if (document.getElementById('itinerary-screen') && document.getElementById('itinerary-screen').style.display === 'block') {
+                        renderItinerary();
+                    }
+                });
+            }
+        };
+    </script>
+
     <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBrnqOiCt-0DizYiXxb73BDGDDLUn1Zdds&libraries=places&callback=initMap"></script>
+
     <script>
         // --- Core App Logic (simplified without Firebase) ---
         let currentTrips = [];
         let selectedTrip = null;
         let selectedDayIndex = 0;
-        let newExpenseType = 'shared'; 
+        let newExpenseType = 'shared';
+        let currentScreen = 'itinerary'; // Default active screen
 
         // Function to load data from Local Storage (instead of Firebase)
         function loadTripsFromLocalStorage() {
@@ -1099,6 +1095,7 @@
             document.getElementById('whatsNext-screen').style.display = 'none';
 
             document.getElementById(`${screen}-screen`).style.display = 'block';
+            currentScreen = screen; // Update the currentScreen variable
             renderScreen(screen);
         }
 
@@ -1127,20 +1124,8 @@
         let map;
         let markers = [];
 
-        window.initMap = function() {
-            console.log("Google Maps API callback triggered.");
-            if (document.readyState === 'complete' || document.readyState === 'interactive') {
-                if (document.getElementById('itinerary-screen').style.display === 'block') {
-                    renderItinerary();
-                }
-            } else {
-                document.addEventListener('DOMContentLoaded', () => {
-                    if (document.getElementById('itinerary-screen').style.display === 'block') {
-                        renderItinerary();
-                    }
-                });
-            }
-        };
+        // Note: window.initMap is defined in a separate script block above this one.
+        // This function will be called by the Google Maps API.
 
         function renderItinerary() {
             if (!selectedTrip || !selectedTrip.itinerary) return;
@@ -1181,12 +1166,21 @@
             const mapContainer = document.getElementById('map');
             if (typeof google !== 'undefined' && google.maps) {
                 if (!map) {
+                    // Check if there are activities with coordinates, otherwise use a default center (Tel Aviv)
+                    const defaultCenter = { lat: 32.0853, lng: 34.7818 }; // Coordinates for Tel Aviv, Israel
+                    const initialCenter = currentDay.activities[0]?.coords ?
+                                          { lat: currentDay.activities[0].coords.latitude, lng: currentDay.activities[0].coords.longitude } :
+                                          defaultCenter;
+
                     map = new google.maps.Map(mapContainer, {
-                        center: { lat: currentDay.activities[0]?.coords?.latitude || 40.7580, lng: currentDay.activities[0]?.coords?.longitude || -73.9855 },
+                        center: initialCenter,
                         zoom: 10,
                     });
                 } else {
-                    map.setCenter({ lat: currentDay.activities[0]?.coords?.latitude || 40.7580, lng: currentDay.activities[0]?.coords?.longitude || -73.9855 });
+                    // Update map center only if a valid coordinate exists for the first activity
+                    if (currentDay.activities[0]?.coords) {
+                        map.setCenter({ lat: currentDay.activities[0].coords.latitude, lng: currentDay.activities[0].coords.longitude });
+                    }
                 }
 
                 markers.forEach(marker => marker.setMap(null));
@@ -1209,7 +1203,7 @@
                     const flightPath = new google.maps.Polyline({
                         path: pathCoords,
                         geodesic: true,
-                        strokeColor: var(--color-primary),
+                        strokeColor: '#4A90E2', // Fixed: Use direct color value instead of CSS variable syntax
                         strokeOpacity: 1.0,
                         strokeWeight: 3,
                     });
@@ -1484,15 +1478,6 @@
             debounceSave();
         }
 
-        function toggleDebtSettled(debtId) {
-            const debt = selectedTrip.debts.find(d => d.id === debtId);
-            if (debt) {
-                debt.settled = !debt.settled;
-                renderDebts();
-                debounceSave();
-            }
-        }
-
         // --- New Trip Functions ---
         function showNewTripModal() {
             document.getElementById('new-trip-modal').classList.add('modal-show');
@@ -1553,28 +1538,10 @@
             debounceSave();
         }
 
-        // --- Helper for Google Maps API loading ---
-        window.initMap = function() {
-            console.log("Google Maps API callback triggered.");
-            // Ensure map is initialized only if the element is visible and present.
-            // Also, ensure DOM is fully loaded.
-            if (document.readyState === 'complete' || document.readyState === 'interactive') {
-                if (document.getElementById('itinerary-screen').style.display === 'block') {
-                    renderItinerary();
-                }
-            } else {
-                document.addEventListener('DOMContentLoaded', () => {
-                    if (document.getElementById('itinerary-screen').style.display === 'block') {
-                        renderItinerary();
-                    }
-                });
-            }
-        };
-
         // Initially render itinerary screen and activate its button
-        navigateTo('itinerary');
-
-
+        // This should be called after loadTripsFromLocalStorage to ensure selectedTrip is set.
+        // It's already part of showMainAppContent.
+        // No need to call navigateTo('itinerary') explicitly here, as showMainAppContent handles it via renderScreen().
     </script>
 </body>
 </html>
