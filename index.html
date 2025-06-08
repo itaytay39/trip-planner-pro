@@ -116,17 +116,9 @@
         }
 
 
-        /* User ID */
-        .user-id-container {
-            background-color: var(--color-card);
-            padding: 8px 15px;
-            border-bottom: 1px solid var(--color-border);
-            text-align: center;
-        }
-        .user-id-text {
-            font-size: 13px;
-            color: var(--color-light-text);
-        }
+        /* User ID (removed as not needed without Firebase Auth) */
+        /* .user-id-container { ... } */
+        /* .user-id-text { ... } */
 
         /* Navigation Tabs */
         .nav-container {
@@ -244,7 +236,7 @@
             transition: background-color 0.2s ease, transform 0.2s ease;
         }
         .add-button:active {
-            transform: scale(0.95);
+            transform: scale(0.98);
         }
 
         .modal-button.cancel {
@@ -265,6 +257,10 @@
             justify-content: center;
             align-items: center;
             z-index: 1000;
+        }
+
+        .modal-show {
+            display: flex;
         }
 
         .modal-content {
@@ -542,7 +538,7 @@
             align-items: center;
             padding: 12px 0;
             border-bottom: 1px solid var(--color-border);
-            flex-wrap: wrap; /* Allow text to wrap */
+            flex-wrap: wrap;
         }
 
         .expense-description {
@@ -647,15 +643,15 @@
         
         /* General Modals (for Add Trip, Add Expense, etc.) */
         .modal {
-            display: none; /* Hidden by default */
-            position: fixed; /* Stay in place */
-            z-index: 1000; /* Sit on top */
+            display: none;
+            position: fixed;
+            z-index: 1000;
             left: 0;
             top: 0;
-            width: 100%; /* Full width */
-            height: 100%; /* Full height */
-            overflow: auto; /* Enable scroll if needed */
-            background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4);
             justify-content: center;
             align-items: center;
         }
@@ -701,15 +697,15 @@
         
         /* Specific overrides for Picker to look good */
         select.picker-select {
-            -webkit-appearance: menulist-button; /* Restore default appearance for better dropdown behavior */
-            background-image: none; /* Remove custom arrow as browser handles it */
-            padding-inline-end: 10px; /* Adjust padding */
+            -webkit-appearance: menulist-button;
+            background-image: none;
+            padding-inline-end: 10px;
         }
         
         /* Specific styling for the main Trip Picker */
         .trip-picker {
-             padding-inline-end: 10px; /* Adjust padding */
-             background-image: none; /* No custom arrow for this one */
+             padding-inline-end: 10px;
+             background-image: none;
         }
 
 
@@ -719,8 +715,8 @@
     <div class="container" id="app-container">
         <!-- Loading State -->
         <div class="loading-container" id="loading-state">
-            <div class="spinner"></div> <!-- Simple spinner CSS for loading -->
-            <p class="loading-text">טוען טיולים ומתחבר ל-Firebase...</p>
+            <div class="spinner"></div>
+            <p class="loading-text">טוען טיולים...</p> <!-- Text updated -->
         </div>
 
         <!-- Empty State (No Trips) -->
@@ -740,10 +736,10 @@
                 <a href="#" class="header-button" onclick="showNewTripModal()">+</a>
             </div>
 
-            <!-- User ID Display -->
-            <div class="user-id-container">
+            <!-- User ID Display (removed as not needed without Firebase Auth) -->
+            <!-- <div class="user-id-container">
                 <p class="user-id-text" id="user-id-display">מזהה משתמש: טוען...</p>
-            </div>
+            </div> -->
 
             <!-- Navigation Tabs -->
             <div class="nav-container">
@@ -772,15 +768,13 @@
                     <p class="section-subtitle"><span id="itinerary-trip-dates"></span></p>
 
                     <div class="day-tabs-container" id="day-tabs-container">
-                        <!-- Day tabs will be populated by JS -->
-                    </div>
+                        </div>
 
                     <div class="day-details-card" id="day-details-card">
                         <h3 class="day-details-title" id="current-day-title"></h3>
                         <p class="weather-info" id="weather-info"></p>
                         <div id="activities-list">
-                            <!-- Activities will be populated by JS -->
-                        </div>
+                            </div>
                         <button class="add-button" onclick="addItineraryActivity()">הוסף פעילות</button>
                     </div>
 
@@ -790,8 +784,7 @@
 
                     <p class="section-subtitle">המלצות בסביבה (מבוססות GPS):</p>
                     <div id="recommendations-list">
-                        <!-- Recommendations will be populated by JS -->
-                    </div>
+                        </div>
                     <p class="footnote-text">*המלצות בזמן אמת דורשות הפעלת GPS וחיבור ל-Google Places API.</p>
                 </div>
 
@@ -810,8 +803,7 @@
                     <button class="add-button" onclick="showAddExpenseModal()">הוסף הוצאה</button>
                     <p class="section-subtitle">הוצאות אחרונות:</p>
                     <div id="expenses-list">
-                        <!-- Expenses will be populated by JS -->
-                    </div>
+                        </div>
                 </div>
 
                 <!-- Packing List Screen -->
@@ -819,8 +811,7 @@
                     <h2 class="section-title">רשימת ציוד - <span id="packing-trip-name"></span></h2>
                     <p class="section-subtitle">סמן פריטים שארוזים</p>
                     <div id="packing-list">
-                        <!-- Packing items will be populated by JS -->
-                    </div>
+                        </div>
                     <button class="add-button" onclick="showAddPackingItemModal()">הוסף פריט</button>
                 </div>
 
@@ -829,8 +820,7 @@
                     <h2 class="section-title">תזכורות חובות - <span id="debts-trip-name"></span></h2>
                     <p class="section-subtitle">עקוב אחר מי חייב למי</p>
                     <div id="debts-list">
-                        <!-- Debts will be populated by JS -->
-                    </div>
+                        </div>
                     <button class="add-button" onclick="showAddDebtModal()">הוסף חוב חדש</button>
                 </div>
 
@@ -842,8 +832,9 @@
                         <p class="info-text">
                             כאן יוצגו הצעות כמו:
                             <br>• מסעדות בקרבת מקום לארוחת צהריים.
-                            <br>• אטרקציה קרובה שטרם ביקרתם בה.
-                            <br>• • אירועים מיוחדים המתקיימים היום באזורך.
+                            <br>• • אטרקציה קרובה שטרם ביקרתם בה.
+                            <br>• תחבורה מומלצת ליעד הבא במסלול.
+                            <br>• אירועים מיוחדים המתקיימים היום באזורך.
                         </p>
                     </div>
                     <p class="footnote-text">*פיצ'ר זה יופעל במלואו עם GPS פעיל וגישה לנתוני מיקום.</p>
@@ -925,181 +916,118 @@
         </div>
     </div>
 
-    <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js"></script>
+    <!-- Google Maps API (no change) -->
     <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBrnqOiCt-0DizYiXxb73BDGDDLUn1Zdds&libraries=places&callback=initMap"></script>
     <script>
-        // --- החלק החשוב ביותר: הגדרות Firebase שלך ---
-        const firebaseConfig = {
-            apiKey: "AIzaSyB11HU1nmZwjY5sGQjyyWud_stNoqEwsi4",
-            authDomain: "mytravelapp2025.firebaseapp.com",
-            projectId: "mytravelapp2025",
-            storageBucket: "mytravelapp2025.firebasestorage.app",
-            messagingSenderId: "287931178675",
-            appId: "1:287931178675:web:5a8ea129b9e86727f45ac6"
-        };
-        // --- סוף חלק ההגדרות ---
-
-        let app;
-        let db;
-        let auth;
-        let userId = null;
+        // --- Core App Logic (simplified without Firebase) ---
         let currentTrips = [];
         let selectedTrip = null;
         let selectedDayIndex = 0;
-        let newExpenseType = 'shared'; // Default for new expense
+        let newExpenseType = 'shared'; 
 
-        // Firebase Initialization
-        if (firebaseConfig && Object.keys(firebaseConfig).length > 0 && firebaseConfig.apiKey) {
-            app = firebase.initializeApp(firebaseConfig);
-            // Access services directly from the firebase object (compat SDK)
-            db = firebase.firestore(); 
-            auth = firebase.auth();
-            console.log("Firebase initialized successfully.");
-        } else {
-            console.error("Firebase config is missing or empty. Firebase will not be initialized.");
-            document.getElementById('loading-state').innerHTML = `<p class="loading-text" style="color: red;">שגיאת Firebase: קונפיגורציה חסרה. אנא מלא את firebaseConfig בקוד.</p>`;
-        }
-
-        // --- Core App Logic ---
-        document.addEventListener('DOMContentLoaded', () => {
-            if (auth && db) {
-                firebase.auth().onAuthStateChanged(user => {
-                    if (user) {
-                        userId = user.uid;
-                        console.log("Firebase Authenticated User:", userId);
-                        loadTrips();
-                    } else {
-                        console.log("No user, signing in anonymously...");
-                        firebase.auth().signInAnonymously()
-                            .then(userCredential => {
-                                userId = userCredential.user.uid;
-                                console.log("Signed in anonymously:", userId);
-                                loadTrips();
-                            })
-                            .catch(error => {
-                                console.error("Firebase Anonymous Auth Error:", error);
-                                alert("שגיאת התחברות ל-Firebase: לא ניתן היה להתחבר. אנא בדוק את החיבור שלך.");
-                                document.getElementById('loading-state').innerHTML = `<p class="loading-text" style="color: red;">שגיאת התחברות: לא ניתן היה להתחבר ל-Firebase.</p>`;
-                            });
-                    }
-                });
+        // Function to load data from Local Storage (instead of Firebase)
+        function loadTripsFromLocalStorage() {
+            const storedTrips = localStorage.getItem('myTravelAppTrips');
+            if (storedTrips) {
+                currentTrips = JSON.parse(storedTrips);
+                console.log("Trips loaded from Local Storage.");
             } else {
-                document.getElementById('loading-state').innerHTML = `<p class="loading-text" style="color: red;">שגיאת Firebase: לא אותחל. אנא בדוק את הקונפיגורציה שלך ב-JS.</p>`;
-                document.getElementById('main-app-content').style.display = 'none';
-                document.getElementById('empty-state').style.display = 'flex';
+                console.log("No trips found in Local Storage, initializing with mock data.");
+                currentTrips = [
+                    {
+                        id: 'trip-1',
+                        name: 'טיול אמריקה - בולטימור למיין',
+                        dates: '14 ביולי - 21 ביולי 2025',
+                        budget: {
+                            total: 2500, personalTotal: 1000, sharedTotal: 1500, expenses: [],
+                            categories: ['לינה', 'תחבורה', 'אוכל', 'אטרקציות', 'קניות', 'שונות'],
+                        },
+                        packingList: [
+                            { id: 'pack-1', item: 'דרכון', packed: false }, { id: 'pack-2', item: 'כרטיסי טיסה', packed: false },
+                            { id: 'pack-3', item: 'מטען נייד', packed: false }, { id: 'pack-4', item: 'כבל טעינה', packed: false },
+                            { id: 'pack-5', item: 'ראש טעינה אוניברסלי', packed: false }, { id: 'pack-6', item: 'דוחה יתושים', packed: false },
+                            { id: 'pack-7', item: 'בגדים ל-9 ימים', packed: false }, { id: 'pack-8', item: 'נעלי הליכה נוחות', packed: false },
+                            { id: 'pack-9', item: 'בגד ים', packed: false }, { id: 'pack-10', item: 'משקפי שמש', packed: false },
+                            { id: 'pack-11', item: 'כובע', packed: false }, { id: 'pack-12', item: 'קרם הגנה', packed: false },
+                            { id: 'pack-13', item: 'מצלמה', packed: false }, { id: 'pack-14', item: 'תרופות אישיות', packed: false },
+                            { id: 'pack-15', item: 'מתאם לשקע אמריקאי', packed: false },
+                        ],
+                        debts: [],
+                        itinerary: [
+                            {
+                                id: 'day-1', date: '14 ביולי', location: 'אוגוסטה, מיין', activities: [
+                                    { id: 'act-1-1', time: '05:00', description: 'יציאה מבולטימור לכיוון ניו המפשייר', coords: { latitude: 39.290385, longitude: -76.612190 } },
+                                    { id: 'act-1-2', time: '12:30', description: 'עצירה בפורטסמות\', ניו המפשייר', coords: { latitude: 43.0784, longitude: -70.7628 } },
+                                ],
+                            },
+                            {
+                                id: 'day-2', date: '15 ביולי', location: 'בר הרבור, מיין', activities: [
+                                    { id: 'act-2-1', time: '09:00', description: 'טיול באוגוסטה - קפיטול, גנים בוטניים', coords: { latitude: 44.3105, longitude: -69.7795 } },
+                                    { id: 'act-2-2', time: '14:00', description: 'נסיעה לבר הרבור', coords: { latitude: 44.3876, longitude: -68.2039 } },
+                                ],
+                            },
+                        ],
+                    },
+                    {
+                        id: 'trip-2',
+                        name: 'טיול אמריקה - ניו יורק',
+                        dates: '13 ביולי - 16 ביולי 2025',
+                        budget: {
+                            total: 1500, personalTotal: 700, sharedTotal: 800, expenses: [],
+                            categories: ['לינה', 'תחבורה', 'אוכל', 'אטרקציות', 'קניות', 'שונות'],
+                        },
+                        packingList: [
+                            { id: 'pack-ny-1', item: 'כרטיס מטרו', packed: false },
+                            { id: 'pack-ny-2', item: 'נעלי הליכה נוחות במיוחד', packed: false },
+                            { id: 'pack-ny-3', item: 'מטריה קטנה', packed: false },
+                        ],
+                        debts: [],
+                        itinerary: [
+                            {
+                                id: 'ny-day-1', date: '13 ביולי', location: 'ניו יורק', activities: [
+                                    { id: 'ny-act-1-1', time: 'בוקר', description: 'ארוחת בוקר קלה: בייגל כשר', coords: { latitude: 40.7816, longitude: -73.9782 } },
+                                    { id: 'ny-act-1-2', time: 'בוקר', description: 'הליכה למוזיאון המטרופוליטן לאמנות', coords: { latitude: 40.7794, longitude: -73.9632 } },
+                                ],
+                            },
+                            {
+                                id: 'ny-day-2', date: '14 ביולי', location: 'ניו יורק', activities: [
+                                    { id: 'ny-act-2-1', time: 'בוקר', description: 'הליכה למוזיאון מומה (MoMA)', coords: { latitude: 40.7614, longitude: -73.9776 } },
+                                    { id: 'ny-act-2-2', time: 'בוקר', description: 'ביקור ברוקפלר סנטר', coords: { latitude: 40.7587, longitude: -73.9787 } },
+                                ],
+                            },
+                        ],
+                    },
+                ];
+                // Save mock data to local storage for persistence
+                localStorage.setItem('myTravelAppTrips', JSON.stringify(currentTrips));
             }
-        });
 
-        async function loadTrips() {
-            document.getElementById('user-id-display').textContent = `מזהה משתמש: ${userId}`;
-            const collectionPath = `artifacts/pwa-travel-app/users/${userId}/trips`; // Firestore path
-            const userDocRef = db.collection(collectionPath).doc('userTrips');
-            try {
-                const docSnap = await userDocRef.get();
-                if (docSnap.exists && docSnap.data().allTrips) {
-                    currentTrips = docSnap.data().allTrips;
-                    console.log("Trips loaded from Firestore.");
-                } else {
-                    console.log("No trips found, initializing with mock data.");
-                    currentTrips = [
-                        {
-                            id: 'trip-1',
-                            name: 'טיול אמריקה - בולטימור למיין',
-                            dates: '14 ביולי - 21 ביולי 2025',
-                            budget: {
-                                total: 2500, personalTotal: 1000, sharedTotal: 1500, expenses: [],
-                                categories: ['לינה', 'תחבורה', 'אוכל', 'אטרקציות', 'קניות', 'שונות'],
-                            },
-                            packingList: [
-                                { id: 'pack-1', item: 'דרכון', packed: false }, { id: 'pack-2', item: 'כרטיסי טיסה', packed: false },
-                                { id: 'pack-3', item: 'מטען נייד', packed: false }, { id: 'pack-4', item: 'כבל טעינה', packed: false },
-                                { id: 'pack-5', item: 'ראש טעינה אוניברסלי', packed: false }, { id: 'pack-6', item: 'דוחה יתושים', packed: false },
-                                { id: 'pack-7', item: 'בגדים ל-9 ימים', packed: false }, { id: 'pack-8', item: 'נעלי הליכה נוחות', packed: false },
-                                { id: 'pack-9', item: 'בגד ים', packed: false }, { id: 'pack-10', item: 'משקפי שמש', packed: false },
-                                { id: 'pack-11', item: 'כובע', packed: false }, { id: 'pack-12', item: 'קרם הגנה', packed: false },
-                                { id: 'pack-13', item: 'מצלמה', packed: false }, { id: 'pack-14', item: 'תרופות אישיות', packed: false },
-                                { id: 'pack-15', item: 'מתאם לשקע אמריקאי', packed: false },
-                            ],
-                            debts: [],
-                            itinerary: [
-                                {
-                                    id: 'day-1', date: '14 ביולי', location: 'אוגוסטה, מיין', activities: [
-                                        { id: 'act-1-1', time: '05:00', description: 'יציאה מבולטימור לכיוון ניו המפשייר', coords: { latitude: 39.290385, longitude: -76.612190 } },
-                                        { id: 'act-1-2', time: '12:30', description: 'עצירה בפורטסמות\', ניו המפשייר', coords: { latitude: 43.0784, longitude: -70.7628 } },
-                                    ],
-                                },
-                                {
-                                    id: 'day-2', date: '15 ביולי', location: 'בר הרבור, מיין', activities: [
-                                        { id: 'act-2-1', time: '09:00', description: 'טיול באוגוסטה - קפיטול, גנים בוטניים', coords: { latitude: 44.3105, longitude: -69.7795 } },
-                                        { id: 'act-2-2', time: '14:00', description: 'נסיעה לבר הרבור', coords: { latitude: 44.3876, longitude: -68.2039 } },
-                                    ],
-                                },
-                            ],
-                        },
-                        {
-                            id: 'trip-2',
-                            name: 'טיול אמריקה - ניו יורק',
-                            dates: '13 ביולי - 16 ביולי 2025',
-                            budget: {
-                                total: 1500, personalTotal: 700, sharedTotal: 800, expenses: [],
-                                categories: ['לינה', 'תחבורה', 'אוכל', 'אטרקציות', 'קניות', 'שונות'],
-                            },
-                            packingList: [
-                                { id: 'pack-ny-1', item: 'כרטיס מטרו', packed: false },
-                                { id: 'pack-ny-2', item: 'נעלי הליכה נוחות במיוחד', packed: false },
-                                { id: 'pack-ny-3', item: 'מטריה קטנה', packed: false },
-                            ],
-                            debts: [],
-                            itinerary: [
-                                {
-                                    id: 'ny-day-1', date: '13 ביולי', location: 'ניו יורק', activities: [
-                                        { id: 'ny-act-1-1', time: 'בוקר', description: 'ארוחת בוקר קלה: בייגל כשר', coords: { latitude: 40.7816, longitude: -73.9782 } },
-                                        { id: 'ny-act-1-2', time: 'בוקר', description: 'הליכה למוזיאון המטרופוליטן לאמנות', coords: { latitude: 40.7794, longitude: -73.9632 } },
-                                    ],
-                                },
-                                {
-                                    id: 'ny-day-2', date: '14 ביולי', location: 'ניו יורק', activities: [
-                                        { id: 'ny-act-2-1', time: 'בוקר', description: 'הליכה למוזיאון מומה (MoMA)', coords: { latitude: 40.7614, longitude: -73.9776 } },
-                                        { id: 'ny-act-2-2', time: 'בוקר', description: 'ביקור ברוקפלר סנטר', coords: { latitude: 40.7587, longitude: -73.9787 } },
-                                    ],
-                                },
-                            ],
-                        },
-                    ];
-                    await userDocRef.set({ allTrips: currentTrips });
-                }
+            if (currentTrips.length > 0) {
+                selectedTrip = currentTrips[0];
                 updateTripPicker();
                 showMainAppContent();
-            } catch (error) {
-                console.error("Error loading trips from Firestore:", error);
-                alert("שגיאת טעינה: לא ניתן היה לטעון את נתוני הטיולים. אנא בדוק את חיבור האינטרנט וכללי האבטחה של Firebase.");
-                showEmptyState(); // Show empty state on load error
-            } finally {
-                document.getElementById('loading-state').style.display = 'none';
+            } else {
+                showEmptyState();
             }
+            document.getElementById('loading-state').style.display = 'none';
         }
 
-        async function saveTrips() {
-            if (userId && db && currentTrips.length > 0) {
-                const collectionPath = `artifacts/pwa-travel-app/users/${userId}/trips`; // Firestore path
-                const userDocRef = db.collection(collectionPath).doc('userTrips');
-                try {
-                    await userDocRef.set({ allTrips: currentTrips });
-                    console.log("Trips saved to Firestore.");
-                } catch (error) {
-                    console.error("Error saving trips to Firestore:", error);
-                    alert("שגיאת שמירה: לא ניתן היה לשמור את נתוני הטיולים.");
-                }
-            }
+        // Function to save data to Local Storage (instead of Firebase)
+        function saveTripsToLocalStorage() {
+            localStorage.setItem('myTravelAppTrips', JSON.stringify(currentTrips));
+            console.log("Trips saved to Local Storage.");
         }
 
         let saveDebounceTimer;
         function debounceSave() {
             clearTimeout(saveDebounceTimer);
-            saveDebounceTimer = setTimeout(saveTrips, 1000); // Save 1 second after last change
+            saveDebounceTimer = setTimeout(saveTripsToLocalStorage, 1000);
         }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadTripsFromLocalStorage(); // Load data on app start
+        });
+
 
         function showLoadingState() {
             document.getElementById('loading-state').style.display = 'flex';
@@ -1117,18 +1045,18 @@
             document.getElementById('loading-state').style.display = 'none';
             document.getElementById('empty-state').style.display = 'none';
             document.getElementById('main-app-content').style.display = 'flex';
-            renderScreen(); // Initial render of the selected screen
+            renderScreen();
         }
 
         function updateTripPicker() {
             const picker = document.getElementById('trip-picker');
-            picker.innerHTML = ''; // Clear existing options
+            picker.innerHTML = '';
             if (currentTrips.length === 0) {
                 const option = document.createElement('option');
                 option.value = 'no_trips';
                 option.textContent = 'אין טיולים';
                 picker.appendChild(option);
-                picker.disabled = true; // Disable picker if no trips
+                picker.disabled = true;
                 return;
             } else {
                 picker.disabled = false;
@@ -1142,7 +1070,7 @@
             });
             picker.value = selectedTrip ? selectedTrip.id : currentTrips[0].id;
             selectedTrip = currentTrips.find(t => t.id === picker.value);
-            renderScreen(); // Re-render after picker update
+            renderScreen();
         }
 
         function handleTripPickerChange() {
@@ -1151,7 +1079,7 @@
                 showNewTripModal();
             } else {
                 selectedTrip = currentTrips.find(trip => trip.id === picker.value);
-                selectedDayIndex = 0; // Reset day index on trip change
+                selectedDayIndex = 0;
                 renderScreen();
             }
         }
@@ -1171,20 +1099,18 @@
             document.getElementById('whatsNext-screen').style.display = 'none';
 
             document.getElementById(`${screen}-screen`).style.display = 'block';
-            renderScreen(screen); // Render the new screen
+            renderScreen(screen);
         }
 
         function renderScreen(screen = currentScreen) {
             if (!selectedTrip) return;
 
-            // Update Header
             document.getElementById('itinerary-trip-name').textContent = selectedTrip.name;
             document.getElementById('itinerary-trip-dates').textContent = selectedTrip.dates;
             document.getElementById('budget-trip-name').textContent = selectedTrip.name;
             document.getElementById('packing-trip-name').textContent = selectedTrip.name;
             document.getElementById('debts-trip-name').textContent = selectedTrip.name;
 
-            // Render specific screen content
             if (screen === 'itinerary') {
                 renderItinerary();
             } else if (screen === 'budget') {
@@ -1194,18 +1120,15 @@
             } else if (screen === 'debts') {
                 renderDebts();
             } else if (screen === 'whatsNext') {
-                // No dynamic rendering needed here, just the static content
             }
         }
 
         // --- Itinerary Functions ---
-        let map; // Google Map instance
-        let markers = []; // Store map markers
+        let map;
+        let markers = [];
 
         window.initMap = function() {
             console.log("Google Maps API callback triggered.");
-            // Ensure map is initialized only if the element is visible and present.
-            // Also, ensure DOM is fully loaded.
             if (document.readyState === 'complete' || document.readyState === 'interactive') {
                 if (document.getElementById('itinerary-screen').style.display === 'block') {
                     renderItinerary();
@@ -1255,7 +1178,6 @@
                 activitiesList.appendChild(div);
             });
 
-            // Google Maps Rendering Logic
             const mapContainer = document.getElementById('map');
             if (typeof google !== 'undefined' && google.maps) {
                 if (!map) {
@@ -1287,7 +1209,7 @@
                     const flightPath = new google.maps.Polyline({
                         path: pathCoords,
                         geodesic: true,
-                        strokeColor: COLORS.primary,
+                        strokeColor: var(--color-primary),
                         strokeOpacity: 1.0,
                         strokeWeight: 3,
                     });
@@ -1297,6 +1219,11 @@
                  mapContainer.innerHTML = `<p style="text-align: center; color: var(--color-light-text); padding: 20px;">מפת גוגל אינה זמינה. אנא ודא שמפתח ה-API תקין ושיש חיבור לאינטרנט.</p>`;
             }
 
+            const MOCK_RECOMMENDATIONS = [
+              { id: 'rec-1', name: 'מסעדת פיצה מקומית', type: 'אוכל', distance: 1.2, coords: { latitude: 44.385, longitude: -68.200 } },
+              { id: 'rec-2', name: 'גלריית אמנות קרובה', type: 'אמנות', distance: 0.8, coords: { latitude: 44.380, longitude: -68.205 } },
+              { id: 'rec-3', name: 'בית קפה נעים', type: 'קפה', distance: 0.5, coords: { latitude: 44.389, longitude: -68.201 } },
+            ];
             const recommendationsList = document.getElementById('recommendations-list');
             recommendationsList.innerHTML = '';
             MOCK_RECOMMENDATIONS.forEach(rec => {
@@ -1348,7 +1275,7 @@
             if (expenses.length === 0) {
                 expensesList.innerHTML = `<p class="light-text">עדיין אין הוצאות רשומות.</p>`;
             } else {
-                expenses.slice(-5).reverse().forEach(exp => { // Show last 5
+                expenses.slice(-5).reverse().forEach(exp => {
                     const div = document.createElement('div');
                     div.className = 'expense-item';
                     div.innerHTML = `
@@ -1364,7 +1291,7 @@
         function showAddExpenseModal() {
             document.getElementById('add-expense-modal').classList.add('modal-show');
             populateExpenseCategories();
-            setNewExpenseType('shared'); // Reset radio button state
+            setNewExpenseType('shared');
         }
 
         function hideAddExpenseModal() {
@@ -1430,7 +1357,6 @@
             });
         }
 
-
         function addExpense() {
             const description = document.getElementById('new-expense-description').value.trim();
             const amount = parseFloat(document.getElementById('new-expense-amount').value);
@@ -1448,7 +1374,7 @@
                 category: category,
                 type: newExpenseType,
                 date: new Date().toISOString(),
-                payer: userId,
+                // payer: userId, // No userId without Firebase
             };
 
             selectedTrip.budget.expenses.push(newExpense);
