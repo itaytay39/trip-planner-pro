@@ -1,0 +1,959 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>מנהל המשימות</title>
+  <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: { extend: { fontFamily: { sans: ['Heebo','Arial Hebrew','sans-serif'] } } }
+    };
+  </script>
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <style>
+    *, body { font-family: 'Heebo', 'Arial Hebrew', sans-serif; }
+
+    /* ── Background ── */
+    body {
+      background: #06091a;
+      background-image:
+        radial-gradient(ellipse at 10% 0%,  rgba(99,102,241,.14) 0%, transparent 45%),
+        radial-gradient(ellipse at 90% 5%,  rgba(139,92,246,.08) 0%, transparent 40%),
+        radial-gradient(ellipse at 50% 100%,rgba(99,102,241,.05) 0%, transparent 50%);
+      min-height: 100vh;
+    }
+
+    /* ── Animations ── */
+    @keyframes slideIn   { from{opacity:0;transform:translateY(-9px) scale(.98)} to{opacity:1;transform:none} }
+    @keyframes fadeUp    { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:none} }
+    @keyframes popIn     { from{opacity:0;transform:scale(.94)} to{opacity:1;transform:scale(1)} }
+    @keyframes confettiF { 0%{top:-28px;opacity:1;transform:rotate(0)} 85%{opacity:1} 100%{top:108vh;opacity:0;transform:rotate(560deg)} }
+    @keyframes urgPulse  { 0%,100%{box-shadow:0 0 0 0 rgba(248,113,113,.4)} 50%{box-shadow:0 0 0 6px rgba(248,113,113,0)} }
+
+    .task-enter    { animation: slideIn .22s cubic-bezier(.34,1.56,.64,1); }
+    .pop-in        { animation: popIn   .28s cubic-bezier(.34,1.56,.64,1); }
+    .fade-up       { animation: fadeUp  .25s ease; }
+    .confetti-item { position:fixed;pointer-events:none;z-index:9999;animation:confettiF linear forwards; }
+
+    /* ── Task card ── */
+    .task-card {
+      background: rgba(13,22,45,.9);
+      border: 1px solid rgba(255,255,255,.06);
+      border-right: 3px solid #1e3a5f;
+      border-radius: 14px;
+      transition: background .16s ease, transform .16s ease, box-shadow .16s ease, border-color .16s ease;
+      cursor: grab;
+      user-select: none;
+    }
+    .task-card:hover:not(.dragging-card):not(.pressing) {
+      background: rgba(22,35,65,.95);
+      border-color: rgba(255,255,255,.1);
+      transform: translateY(-1px);
+      box-shadow: 0 8px 28px rgba(0,0,0,.55);
+    }
+    .task-card.urgent { border-right-color: #f87171; }
+    .task-card.urgent:hover:not(.dragging-card) { border-right-color: #fca5a5; }
+    .task-card.medium { border-right-color: #fb923c; }
+    .task-card.low    { border-right-color: #4a5568; }
+    .task-card.today-card { border-right-color: #818cf8; }
+    .task-card.done   { border-right-color: #1e3a5f !important; }
+    .task-card.dragging-card { opacity:.3; transform:scale(.98) rotate(.6deg); cursor:grabbing; }
+    .task-card.pressing { transform:scale(.97); }
+    .urgent-pulse { animation: urgPulse 2.4s ease infinite; }
+
+    /* ── Glass header ── */
+    .glass-header {
+      background: rgba(6,9,26,.8);
+      backdrop-filter: blur(22px);
+      -webkit-backdrop-filter: blur(22px);
+      border-bottom: 1px solid rgba(255,255,255,.055);
+    }
+
+    /* ── Today section ── */
+    .today-wrap {
+      background: linear-gradient(135deg, rgba(99,102,241,.11) 0%, rgba(139,92,246,.07) 100%);
+      border: 1px solid rgba(129,140,248,.22);
+      border-radius: 18px;
+      overflow: hidden;
+    }
+    .today-head {
+      background: linear-gradient(90deg, rgba(99,102,241,.28) 0%, rgba(139,92,246,.18) 100%);
+      border-bottom: 1px solid rgba(129,140,248,.18);
+    }
+
+    /* ── Primary button ── */
+    .btn-prime {
+      background: linear-gradient(135deg,#6366f1 0%,#7c3aed 100%);
+      color:#fff; font-weight:700; border-radius:12px;
+      box-shadow: 0 2px 10px rgba(99,102,241,.38);
+      transition: all .17s ease;
+    }
+    .btn-prime:hover  { background:linear-gradient(135deg,#818cf8 0%,#8b5cf6 100%); transform:translateY(-1px); box-shadow:0 5px 18px rgba(99,102,241,.5); }
+    .btn-prime:active { transform:scale(.97); }
+
+    /* ── Ghost button ── */
+    .btn-ghost {
+      background: rgba(255,255,255,.045);
+      color:#8892a4; border:1px solid rgba(255,255,255,.08);
+      border-radius:12px; transition: all .17s ease;
+    }
+    .btn-ghost:hover  { background:rgba(255,255,255,.09); color:#e2e8f0; border-color:rgba(255,255,255,.14); }
+    .btn-ghost.active { background:rgba(99,102,241,.18); color:#a5b4fc; border-color:rgba(99,102,241,.35); }
+
+    /* ── Inputs / Selects ── */
+    .d-input, .d-select {
+      background: rgba(255,255,255,.04);
+      border: 1.5px solid rgba(255,255,255,.08);
+      border-radius: 12px; color:#e2e8f0;
+      transition: border-color .17s ease, box-shadow .17s ease, background .17s ease;
+    }
+    .d-input::placeholder { color:#374151; }
+    .d-input:focus, .d-select:focus {
+      background: rgba(255,255,255,.07);
+      border-color: rgba(99,102,241,.5);
+      box-shadow: 0 0 0 3px rgba(99,102,241,.1);
+      outline: none;
+    }
+    .d-select { appearance:none; color:#94a3b8; }
+    .d-select option { background:#0d1626; color:#e2e8f0; }
+
+    /* ── Urgency buttons in form ── */
+    .urg-btn { border-radius:12px; border:2px solid; font-weight:600; font-size:13px; transition:all .15s ease; padding:9px 0; }
+    .urg-u.on { background:#f87171;border-color:#f87171;color:#fff; }
+    .urg-u    { background:rgba(248,113,113,.08);border-color:rgba(248,113,113,.3);color:#fca5a5; }
+    .urg-m.on { background:#fb923c;border-color:#fb923c;color:#fff; }
+    .urg-m    { background:rgba(251,146,60,.08);border-color:rgba(251,146,60,.3);color:#fdba74; }
+    .urg-l.on { background:#475569;border-color:#475569;color:#fff; }
+    .urg-l    { background:rgba(71,85,105,.15);border-color:rgba(71,85,105,.35);color:#94a3b8; }
+    .dur-btn  { border-radius:12px;border:2px solid rgba(255,255,255,.08);font-weight:600;font-size:12px;transition:all .15s ease;padding:8px 0;color:#64748b;background:rgba(255,255,255,.03); }
+    .dur-btn.on { border-color:rgba(99,102,241,.5);background:rgba(99,102,241,.12);color:#a5b4fc; }
+
+    /* ── Badges ── */
+    .bdg { border-radius:20px;font-size:11px;font-weight:600;padding:2px 8px;display:inline-flex;align-items:center;gap:3px; }
+    .bdg-u { background:rgba(248,113,113,.14);color:#fca5a5; }
+    .bdg-m { background:rgba(251,146,60,.14); color:#fdba74; }
+    .bdg-l { background:rgba(71,85,105,.3);   color:#94a3b8; }
+    .bdg-p { background:rgba(99,102,241,.14); color:#a5b4fc; }
+    .bdg-lg{ background:rgba(139,92,246,.14); color:#c4b5fd; }
+    .bdg-sh{ background:rgba(20,184,166,.14); color:#5eead4; }
+    .bdg-td{ background:rgba(129,140,248,.18);color:#c7d2fe; }
+
+    /* ── Modal ── */
+    .modal-bg  { background:rgba(0,0,0,.72);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px); }
+    .modal-box {
+      background: #080f22;
+      border: 1px solid rgba(255,255,255,.08);
+      border-radius: 22px;
+      box-shadow: 0 40px 90px rgba(0,0,0,.85), 0 0 0 1px rgba(99,102,241,.07);
+    }
+
+    /* ── Toast ── */
+    .toast-box {
+      background:#111f38;
+      border:1px solid rgba(255,255,255,.1);
+      border-radius:14px;
+      box-shadow:0 8px 32px rgba(0,0,0,.6);
+    }
+    .toast-celebrate {
+      background:linear-gradient(135deg,#312e81 0%,#4c1d95 100%);
+      border-color:rgba(129,140,248,.3);
+    }
+
+    /* ── Kanban ── */
+    .kan-col { background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.055);border-radius:18px;overflow:hidden; }
+    .kan-drop { background:rgba(99,102,241,.07)!important;border-color:rgba(99,102,241,.3)!important; }
+    .kan-card {
+      background:rgba(13,22,45,.95);border:1px solid rgba(255,255,255,.07);
+      border-radius:12px;transition:all .15s ease;cursor:grab;
+    }
+    .kan-card:hover { background:rgba(22,35,65,.95);transform:translateY(-1px);box-shadow:0 4px 14px rgba(0,0,0,.5); }
+
+    /* ── Section title ── */
+    .sec-title { font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:#3b4a62;display:flex;align-items:center;gap:6px;margin-bottom:10px; }
+    .dot { width:6px;height:6px;border-radius:50%;display:inline-block;flex-shrink:0; }
+
+    /* ── Checkbox ── */
+    .chk { width:22px;height:22px;border-radius:50%;border:2px solid;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .17s ease;cursor:pointer; }
+    .chk-u { border-color:#f87171;background:rgba(248,113,113,.08); }
+    .chk-u:hover { background:rgba(248,113,113,.2); }
+    .chk-m { border-color:#fb923c;background:rgba(251,146,60,.08); }
+    .chk-m:hover { background:rgba(251,146,60,.2); }
+    .chk-l { border-color:#4a5568;background:rgba(74,85,104,.1); }
+    .chk-l:hover { background:rgba(74,85,104,.25); }
+    .chk-done { border-color:#6366f1!important;background:#6366f1!important; }
+
+    /* ── Saved indicator ── */
+    .saved-dot {
+      position:fixed;bottom:24px;right:16px;z-index:30;
+      background:rgba(16,28,52,.9);border:1px solid rgba(255,255,255,.08);
+      color:#475569;font-size:11px;font-weight:600;padding:5px 10px;
+      border-radius:20px;pointer-events:none;
+    }
+
+    /* ── FAB ── */
+    .fab {
+      position:fixed;bottom:24px;left:20px;z-index:25;
+      width:56px;height:56px;border-radius:50%;
+      background:linear-gradient(135deg,#6366f1,#7c3aed);
+      color:white;font-size:26px;display:flex;align-items:center;justify-content:center;
+      box-shadow:0 4px 20px rgba(99,102,241,.5);
+      transition:all .18s ease;
+    }
+    .fab:hover { transform:scale(1.08);box-shadow:0 6px 28px rgba(99,102,241,.65); }
+
+    /* ── Scrollbar ── */
+    ::-webkit-scrollbar { width:4px; }
+    ::-webkit-scrollbar-thumb { background:rgba(255,255,255,.09);border-radius:2px; }
+
+    /* ── Text styles ── */
+    .t1 { color:#dde4f0; }
+    .t2 { color:#6b7a9a; }
+    .t3 { color:#3b4a62; }
+    .line-clamp-2 { overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical; }
+
+    /* ── Cal tip ── */
+    .cal-tip {
+      background:rgba(99,102,241,.08);border:1px solid rgba(99,102,241,.18);
+      border-radius:10px;padding:8px 10px;margin-top:8px;
+      display:flex;align-items:center;gap:8px;
+    }
+  </style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel">
+const { useState, useEffect, useRef, useCallback, useMemo } = React;
+
+/* ── Constants ──────────────────────────────────────────────── */
+
+const PROJECTS = [
+  'כללי','הנהלה','עובדים','לקוחות','כספים','שיווק',
+  'גיוס עובדים','פיתוח עסקי','הדרכות',
+  'פרויקטים בביצוע','משימות אישיות','בית ומשפחה','תכנון אסטרטגי'
+];
+
+const KANBAN_COLS = {
+  todo:       { label:'לביצוע', icon:'📋', hdr:'bg-slate-700'   },
+  inprogress: { label:'בתהליך', icon:'⚡', hdr:'bg-indigo-700'  },
+  done:       { label:'הושלם',  icon:'✅', hdr:'bg-emerald-700' },
+};
+
+const MILESTONES = [5,10,20,50,100];
+const CHEERS = ['מעולה! אתה מתקדם בקצב מצוין 🚀','יום פרודוקטיבי מדהים 👏','אתה מנהל את הזמן כמו מקצוען ⭐','כל הכבוד! אתה על גל 🏆'];
+const STORAGE = 'tm_v4';
+
+/* ── Helpers ────────────────────────────────────────────────── */
+
+let _n = 0;
+const uid = () => `${Date.now()}-${++_n}`;
+const today = () => new Date().toISOString().slice(0,10);
+
+function inferUrgency(t,d='') {
+  const s = (t+' '+d).toLowerCase();
+  if(['דחוף','היום','לקוח','מכרז','asap','מיד','עכשיו','חירום'].some(k=>s.includes(k))) return 'urgent';
+  if(['השבוע','בקרוב','חשוב','מחר','important'].some(k=>s.includes(k))) return 'medium';
+  return 'low';
+}
+function inferDur(t,d='') {
+  const s=(t+' '+d).toLowerCase();
+  if(['פגישה','הדרכה','כנס','ישיבה','סדנה','עבודה על','meeting','workshop'].some(k=>s.includes(k))) return 'long';
+  if(['שלח','אשר','בדוק','עדכן','quick','call','שיחה קצרה'].some(k=>s.includes(k))) return 'short';
+  return null;
+}
+
+function load() {
+  try {
+    const r = JSON.parse(localStorage.getItem(STORAGE)||'null');
+    if(!r) return null;
+    if(r.streak?.lastDate && r.streak.lastDate!==today()) {
+      const yd=new Date(); yd.setDate(yd.getDate()-1);
+      r.streak.count = r.streak.lastDate===yd.toISOString().slice(0,10) ? r.streak.count : 0;
+      r.streak.lastDate = today();
+    }
+    return r;
+  } catch { return null; }
+}
+
+/* ── Confetti ───────────────────────────────────────────────── */
+function Confetti({onDone}) {
+  const ps = useMemo(()=>Array.from({length:50},(_,i)=>({
+    id:i, left:Math.random()*100,
+    dur:1.3+Math.random()*2,
+    delay:Math.random(),
+    g:['🎉','⭐','✨','🎊','💜','🔮'][Math.floor(Math.random()*6)],
+    sz:14+Math.random()*18,
+  })),[]);
+  useEffect(()=>{const t=setTimeout(onDone,3500);return()=>clearTimeout(t);},[]);
+  return (
+    <div style={{position:'fixed',inset:0,pointerEvents:'none',zIndex:9999}}>
+      {ps.map(p=>(
+        <span key={p.id} className="confetti-item"
+          style={{left:`${p.left}%`,fontSize:`${p.sz}px`,
+                  animationDuration:`${p.dur}s`,animationDelay:`${p.delay}s`}}>
+          {p.g}
+        </span>
+      ))}
+    </div>
+  );
+}
+
+/* ── Toast ──────────────────────────────────────────────────── */
+function Toast({msg,type,onClose}) {
+  useEffect(()=>{const t=setTimeout(onClose,3300);return()=>clearTimeout(t);},[]);
+  return (
+    <div className={`toast-box ${type==='celebrate'?'toast-celebrate':''} fade-up`}
+      style={{position:'fixed',bottom:32,left:'50%',transform:'translateX(-50%)',
+              zIndex:50,padding:'12px 20px',textAlign:'center',maxWidth:280,
+              color:type==='celebrate'?'#c7d2fe':'#94a3b8',fontSize:13,fontWeight:600}}>
+      {msg}
+    </div>
+  );
+}
+
+/* ── TaskForm ───────────────────────────────────────────────── */
+function TaskForm({task, projects, onSave, onClose}) {
+  const isEdit = !!task;
+  const [f,setF] = useState(()=>task
+    ? {...task}
+    : {title:'',description:'',project:'כללי',urgency:'low',isToday:false,duration:null,stage:'todo'}
+  );
+  const [autoU,setAutoU] = useState(!isEdit);
+  const ref = useRef();
+  useEffect(()=>{ setTimeout(()=>ref.current?.focus(),90); },[]);
+
+  const onTitle = v => setF(p => {
+    const n={...p,title:v};
+    if(autoU) n.urgency=inferUrgency(v,p.description);
+    if(!isEdit&&!p.duration) n.duration=inferDur(v,p.description);
+    return n;
+  });
+
+  const addProject = ()=>{
+    const n=window.prompt('שם הפרויקט החדש:');
+    return n?.trim()||null;
+  };
+
+  const handleProject = e=>{
+    if(e.target.value==='__new__'){
+      const p=addProject();
+      if(p){ onSave._addProj?.(p); setF(x=>({...x,project:p})); }
+    } else setF(x=>({...x,project:e.target.value}));
+  };
+
+  const submit = e=>{ e.preventDefault(); if(!f.title.trim()) return; onSave(f); };
+
+  const stageOpts=[{v:'todo',l:'📋 לביצוע'},{v:'inprogress',l:'⚡ בתהליך'},{v:'done',l:'✅ הושלם'}];
+
+  return (
+    <div className="modal-bg" style={{position:'fixed',inset:0,zIndex:40,display:'flex',alignItems:'flex-end',justifyContent:'center',padding:'8px'}}
+      onClick={e=>e.target===e.currentTarget&&onClose()}>
+      <div className="modal-box pop-in w-full" style={{maxWidth:480,marginBottom:8}} onClick={e=>e.stopPropagation()}>
+
+        {/* Header */}
+        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'18px 20px 14px',borderBottom:'1px solid rgba(255,255,255,.06)'}}>
+          <span style={{color:'#c7d2fe',fontWeight:700,fontSize:16}}>{isEdit?'✏️ עריכת משימה':'✦ משימה חדשה'}</span>
+          <button onClick={onClose} style={{color:'#3b4a62',fontSize:26,lineHeight:1,cursor:'pointer',transition:'color .15s'}}
+            onMouseEnter={e=>e.target.style.color='#8892a4'} onMouseLeave={e=>e.target.style.color='#3b4a62'}>×</button>
+        </div>
+
+        <form onSubmit={submit} style={{padding:'16px 20px',display:'flex',flexDirection:'column',gap:12}}>
+          {/* Title */}
+          <input ref={ref} type="text" required placeholder="שם המשימה *"
+            value={f.title} onChange={e=>onTitle(e.target.value)}
+            className="d-input" style={{padding:'12px 14px',fontSize:15,width:'100%'}} />
+
+          {/* Description */}
+          <textarea placeholder="תיאור (אופציונלי)" rows={2} value={f.description||''}
+            onChange={e=>setF(p=>({...p,description:e.target.value}))}
+            className="d-input" style={{padding:'10px 14px',fontSize:13,resize:'none',width:'100%'}} />
+
+          {/* Project */}
+          <div style={{position:'relative'}}>
+            <select value={f.project} onChange={handleProject}
+              className="d-select" style={{padding:'10px 14px',fontSize:13,width:'100%',paddingLeft:30}}>
+              {projects.map(p=><option key={p} value={p}>{p}</option>)}
+              <option value="__new__">＋ פרויקט חדש</option>
+            </select>
+            <span style={{position:'absolute',left:12,top:'50%',transform:'translateY(-50%)',color:'#3b4a62',pointerEvents:'none',fontSize:11}}>▾</span>
+          </div>
+
+          {/* Urgency */}
+          <div>
+            <div style={{fontSize:11,fontWeight:700,color:'#3b4a62',marginBottom:6,letterSpacing:'.06em',textTransform:'uppercase'}}>דחיפות</div>
+            <div style={{display:'flex',gap:6}}>
+              {[{k:'urgent',l:'🔴 דחוף',c:'urg-u'},{k:'medium',l:'🟠 בינוני',c:'urg-m'},{k:'low',l:'🟢 רגיל',c:'urg-l'}].map(({k,l,c})=>(
+                <button key={k} type="button" className={`urg-btn ${c} ${f.urgency===k?'on':''}`}
+                  style={{flex:1}} onClick={()=>{setF(p=>({...p,urgency:k}));setAutoU(false);}}>
+                  {l}
+                </button>
+              ))}
+            </div>
+            {autoU&&f.title&&<p style={{fontSize:11,color:'#818cf8',marginTop:4}}>✨ זוהה אוטומטית</p>}
+          </div>
+
+          {/* Duration */}
+          <div>
+            <div style={{fontSize:11,fontWeight:700,color:'#3b4a62',marginBottom:6,letterSpacing:'.06em',textTransform:'uppercase'}}>משך זמן</div>
+            <div style={{display:'flex',gap:6}}>
+              {[{k:null,l:'לא ידוע'},{k:'short',l:"⚡ קצר (≤15')"},{k:'long',l:"⏰ ממושך (≥30')"}].map(({k,l})=>(
+                <button key={String(k)} type="button" className={`dur-btn ${f.duration===k?'on':''}`}
+                  style={{flex:1}} onClick={()=>setF(p=>({...p,duration:k}))}>
+                  {l}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Today + Stage */}
+          <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
+            <button type="button"
+              onClick={()=>setF(p=>({...p,isToday:!p.isToday}))}
+              style={{padding:'8px 14px',borderRadius:12,fontSize:13,fontWeight:600,border:'1.5px solid',
+                      background:f.isToday?'rgba(129,140,248,.18)':'rgba(255,255,255,.03)',
+                      borderColor:f.isToday?'rgba(129,140,248,.45)':'rgba(255,255,255,.08)',
+                      color:f.isToday?'#a5b4fc':'#4b5568',transition:'all .15s ease',cursor:'pointer'}}>
+              ⭐ {f.isToday?'מסומן להיום':'הוסף להיום'}
+            </button>
+            <div style={{position:'relative',flex:1,minWidth:120}}>
+              <select value={f.stage||'todo'} onChange={e=>setF(p=>({...p,stage:e.target.value}))}
+                className="d-select" style={{padding:'8px 14px',fontSize:13,width:'100%',paddingLeft:26}}>
+                {stageOpts.map(o=><option key={o.v} value={o.v}>{o.l}</option>)}
+              </select>
+              <span style={{position:'absolute',left:10,top:'50%',transform:'translateY(-50%)',color:'#3b4a62',pointerEvents:'none',fontSize:10}}>▾</span>
+            </div>
+          </div>
+
+          {/* Submit */}
+          <div style={{display:'flex',gap:8,paddingTop:4}}>
+            <button type="submit" className="btn-prime" style={{flex:1,padding:'12px 0',fontSize:14}}>
+              {isEdit?'שמור שינויים':'הוסף משימה'}
+            </button>
+            <button type="button" onClick={onClose} className="btn-ghost"
+              style={{padding:'12px 18px',fontSize:14,cursor:'pointer'}}>
+              ביטול
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+/* ── TaskCard ───────────────────────────────────────────────── */
+function TaskCard({task, onToggle, onEdit, onDelete, onDragStart, onDragOver, onDrop, isDragging}) {
+  const isDone  = task.stage==='done';
+  const lpRef   = useRef(null);
+  const [press, setPress] = useState(false);
+
+  const startLP = ()=>{ setPress(true); lpRef.current=setTimeout(()=>{ onDelete(task.id); setPress(false); },800); };
+  const stopLP  = ()=>{ clearTimeout(lpRef.current); setPress(false); };
+  const sp      = e=>{ e.stopPropagation(); stopLP(); };
+
+  const urg = task.urgency||'low';
+  const chkCls = isDone?'chk-done':urg==='urgent'?'chk-u':urg==='medium'?'chk-m':'chk-l';
+  const bdgCls = urg==='urgent'?'bdg-u':urg==='medium'?'bdg-m':'bdg-l';
+  const urgLabel = urg==='urgent'?'דחוף':urg==='medium'?'בינוני':'רגיל';
+  const urgEmoji = urg==='urgent'?'🔴':urg==='medium'?'🟠':'🟢';
+
+  const cardCls = [
+    'task-card task-enter',
+    urg,
+    isDone?'done':'',
+    task.isToday&&!isDone?'today-card':'',
+    isDragging?'dragging-card':'',
+    press?'pressing':'',
+    urg==='urgent'&&!isDone?'urgent-pulse':'',
+  ].filter(Boolean).join(' ');
+
+  return (
+    <div draggable
+      onDragStart={()=>onDragStart(task.id)}
+      onDragOver={e=>{e.preventDefault();onDragOver(task.id);}}
+      onDrop={e=>{e.preventDefault();onDrop(task.id);}}
+      onMouseDown={startLP} onMouseUp={stopLP} onMouseLeave={stopLP}
+      onTouchStart={startLP} onTouchEnd={stopLP} onTouchMove={stopLP}
+      className={cardCls}
+      style={{padding:'12px 14px'}}>
+
+      <div style={{display:'flex',alignItems:'flex-start',gap:10}}>
+        {/* Checkbox */}
+        <button onMouseDown={sp} onTouchStart={sp}
+          onClick={e=>{sp(e);onToggle(task.id);}}
+          className={`chk ${chkCls}`}
+          style={{marginTop:2}}>
+          {isDone&&<svg width="11" height="9" viewBox="0 0 11 9" fill="none"><path d="M1 4L4 7.5L10 1" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+        </button>
+
+        {/* Content */}
+        <div style={{flex:1,minWidth:0}}>
+          <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',gap:6}}>
+            <p className="t1" style={{fontSize:14,fontWeight:600,lineHeight:1.4,flex:1,wordBreak:'break-word',
+                textDecoration:isDone?'line-through':'none',
+                color:isDone?'#3b4a62':'#dde4f0'}}>
+              {task.isToday&&!isDone&&<span style={{color:'#818cf8',marginLeft:5}}>⭐</span>}
+              {task.title}
+            </p>
+            <div style={{display:'flex',gap:2,flexShrink:0}}>
+              <button onMouseDown={sp} onTouchStart={sp}
+                onClick={e=>{sp(e);onEdit(task);}}
+                style={{color:'#2d3a52',fontSize:13,padding:'2px 4px',borderRadius:6,cursor:'pointer',
+                        transition:'color .15s'}}
+                onMouseEnter={e=>e.currentTarget.style.color='#818cf8'}
+                onMouseLeave={e=>e.currentTarget.style.color='#2d3a52'}>✏️</button>
+              <button onMouseDown={sp} onTouchStart={sp}
+                onClick={e=>{sp(e);onDelete(task.id);}}
+                style={{color:'#2d3a52',fontSize:13,padding:'2px 4px',borderRadius:6,cursor:'pointer',
+                        transition:'color .15s'}}
+                onMouseEnter={e=>e.currentTarget.style.color='#f87171'}
+                onMouseLeave={e=>e.currentTarget.style.color='#2d3a52'}>🗑</button>
+            </div>
+          </div>
+
+          {task.description&&(
+            <p className="line-clamp-2" style={{fontSize:12,color:'#3b4a62',marginTop:3,lineHeight:1.5}}>
+              {task.description}
+            </p>
+          )}
+
+          {/* Badges */}
+          <div style={{display:'flex',flexWrap:'wrap',gap:5,marginTop:8}}>
+            <span className={`bdg ${bdgCls}`}>{urgEmoji} {urgLabel}</span>
+            {task.project&&task.project!=='כללי'&&(
+              <span className="bdg bdg-p">📁 {task.project}</span>
+            )}
+            {task.duration==='long' &&<span className="bdg bdg-lg">⏰ ממושך</span>}
+            {task.duration==='short'&&<span className="bdg bdg-sh">⚡ קצר</span>}
+            {task.isToday&&!isDone&&<span className="bdg bdg-td">⭐ להיום</span>}
+          </div>
+
+          {/* Calendar tip */}
+          {task.duration==='long'&&!isDone&&(
+            <div className="cal-tip">
+              <span style={{fontSize:14}}>📅</span>
+              <span style={{fontSize:12,color:'#818cf8',flex:1}}>כדאי לשריין זמן ביומן</span>
+              <button onMouseDown={sp} onTouchStart={sp}
+                onClick={e=>{sp(e);window.open(`https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(task.title)}&details=${encodeURIComponent(task.description||'')}`, '_blank');}}
+                style={{fontSize:11,fontWeight:700,color:'#a5b4fc',background:'rgba(99,102,241,.2)',
+                        border:'1px solid rgba(99,102,241,.3)',borderRadius:8,padding:'4px 10px',cursor:'pointer',
+                        transition:'background .15s'}}
+                onMouseEnter={e=>e.currentTarget.style.background='rgba(99,102,241,.35)'}
+                onMouseLeave={e=>e.currentTarget.style.background='rgba(99,102,241,.2)'}>
+                העבר ליומן
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── KanbanBoard ────────────────────────────────────────────── */
+function KanbanBoard({tasks, onEdit, onDelete, onStageChange}) {
+  const [dragId, setDragId] = useState(null);
+  const [overStage, setOverStage] = useState(null);
+
+  const by = useMemo(()=>{
+    const g={todo:[],inprogress:[],done:[]};
+    tasks.forEach(t=>{ if(g[t.stage]) g[t.stage].push(t); else g.todo.push(t); });
+    return g;
+  },[tasks]);
+
+  return (
+    <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(200px,1fr))',gap:12}}>
+      {Object.entries(KANBAN_COLS).map(([stage,cfg])=>(
+        <div key={stage} className={`kan-col ${overStage===stage?'kan-drop':''}`}
+          onDragOver={e=>{e.preventDefault();setOverStage(stage);}}
+          onDragLeave={()=>setOverStage(null)}
+          onDrop={e=>{e.preventDefault();if(dragId)onStageChange(dragId,stage);setDragId(null);setOverStage(null);}}>
+
+          <div className={`${cfg.hdr} text-white`}
+            style={{padding:'10px 14px',display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+            <span style={{fontWeight:700,fontSize:13}}>{cfg.icon} {cfg.label}</span>
+            <span style={{background:'rgba(255,255,255,.18)',borderRadius:20,fontSize:11,fontWeight:700,padding:'1px 7px'}}>
+              {by[stage].length}
+            </span>
+          </div>
+
+          <div style={{padding:10,minHeight:120,display:'flex',flexDirection:'column',gap:6}}>
+            {by[stage].map(task=>{
+              const urg=task.urgency||'low';
+              const bdgCls=urg==='urgent'?'bdg-u':urg==='medium'?'bdg-m':'bdg-l';
+              return (
+                <div key={task.id} draggable
+                  onDragStart={()=>setDragId(task.id)}
+                  onDragEnd={()=>{setDragId(null);setOverStage(null);}}
+                  className="kan-card"
+                  style={{padding:'10px 12px',opacity:dragId===task.id?.35:1}}>
+                  <div style={{display:'flex',justifyContent:'space-between',gap:4}}>
+                    <p style={{fontSize:13,fontWeight:600,flex:1,color:stage==='done'?'#3b4a62':'#dde4f0',
+                                textDecoration:stage==='done'?'line-through':'none',lineHeight:1.35}}>
+                      {task.isToday&&<span style={{color:'#818cf8',marginLeft:3}}>⭐</span>}
+                      {task.title}
+                    </p>
+                    <div style={{display:'flex',gap:1}}>
+                      <button onClick={()=>onEdit(task)} style={{fontSize:11,color:'#2d3a52',padding:'1px 3px',cursor:'pointer'}}
+                        onMouseEnter={e=>e.currentTarget.style.color='#818cf8'}
+                        onMouseLeave={e=>e.currentTarget.style.color='#2d3a52'}>✏️</button>
+                      <button onClick={()=>onDelete(task.id)} style={{fontSize:11,color:'#2d3a52',padding:'1px 3px',cursor:'pointer'}}
+                        onMouseEnter={e=>e.currentTarget.style.color='#f87171'}
+                        onMouseLeave={e=>e.currentTarget.style.color='#2d3a52'}>🗑</button>
+                    </div>
+                  </div>
+                  <div style={{display:'flex',gap:4,marginTop:6,flexWrap:'wrap'}}>
+                    <span className={`bdg ${bdgCls}`} style={{fontSize:10}}>
+                      {urg==='urgent'?'🔴':urg==='medium'?'🟠':'🟢'}
+                    </span>
+                    {task.project&&task.project!=='כללי'&&(
+                      <span className="bdg bdg-p" style={{fontSize:10}}>📁 {task.project}</span>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+            {by[stage].length===0&&(
+              <p style={{textAlign:'center',color:'#2d3a52',fontSize:12,paddingTop:24,paddingBottom:24}}>
+                גרור משימה לכאן
+              </p>
+            )}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/* ── App ────────────────────────────────────────────────────── */
+function App() {
+  const [tasks,    setTasks]    = useState([]);
+  const [projects, setProjects] = useState(PROJECTS);
+  const [streak,   setStreak]   = useState({count:0,lastDate:today()});
+  const [loaded,   setLoaded]   = useState(false);
+
+  const [view,    setView]    = useState('list');
+  const [search,  setSearch]  = useState('');
+  const [fProj,   setFProj]   = useState('');
+  const [fUrg,    setFUrg]    = useState('');
+  const [showDone,setShowDone]= useState(false);
+  const [showForm,setShowForm]= useState(false);
+  const [editTask,setEditTask]= useState(null);
+  const [toast,   setToast]   = useState(null);
+  const [confetti,setConfetti]= useState(false);
+  const [saved,   setSaved]   = useState(false);
+  const [dragId,  setDragId]  = useState(null);
+  const dragRef = useRef(null);
+  const prevDone = useRef(0);
+
+  /* Load */
+  useEffect(()=>{
+    const d=load();
+    if(d){
+      setTasks(d.tasks||[]);
+      setProjects(d.projects||PROJECTS);
+      setStreak(d.streak||{count:0,lastDate:today()});
+      prevDone.current=(d.tasks||[]).filter(t=>t.stage==='done'&&t.completedAt?.startsWith(today())).length;
+    }
+    setLoaded(true);
+  },[]);
+
+  /* Save */
+  useEffect(()=>{
+    if(!loaded) return;
+    localStorage.setItem(STORAGE,JSON.stringify({tasks,projects,streak}));
+    setSaved(true);
+    const t=setTimeout(()=>setSaved(false),1300);
+    return ()=>clearTimeout(t);
+  },[tasks,projects,streak,loaded]);
+
+  const completedToday = useMemo(()=>
+    tasks.filter(t=>t.stage==='done'&&t.completedAt?.startsWith(today())).length
+  ,[tasks]);
+
+  /* Milestone */
+  useEffect(()=>{
+    if(!loaded) return;
+    if(completedToday>prevDone.current&&MILESTONES.includes(completedToday)){
+      setConfetti(true);
+      push(CHEERS[Math.floor(Math.random()*CHEERS.length)],'celebrate');
+    }
+    prevDone.current=completedToday;
+  },[completedToday,loaded]);
+
+  const push=(msg,type='info')=>setToast({msg,type});
+
+  const addProj = useCallback(name=>{ if(name) setProjects(p=>[...p,name]); },[]);
+
+  const handleSave = useCallback(form=>{
+    if(form.id){
+      setTasks(p=>p.map(t=>t.id===form.id?{...t,...form}:t));
+      push('✏️ המשימה עודכנה');
+    } else {
+      setTasks(p=>[{
+        id:uid(), title:form.title.trim(),
+        description:form.description||'',
+        project:form.project||'כללי',
+        urgency:form.urgency||'low',
+        isToday:form.isToday||false,
+        duration:form.duration||null,
+        stage:form.stage||'todo',
+        createdAt:new Date().toISOString(),
+        completedAt:null,
+      },...p]);
+      push('✅ המשימה נוספה!');
+    }
+    setShowForm(false); setEditTask(null);
+  },[]);
+  handleSave._addProj = addProj;
+
+  const delTask = useCallback(id=>{
+    if(!window.confirm('למחוק את המשימה?')) return;
+    setTasks(p=>p.filter(t=>t.id!==id));
+    push('🗑 נמחקה');
+  },[]);
+
+  const toggleTask = useCallback(id=>{
+    setTasks(p=>p.map(t=>{
+      if(t.id!==id) return t;
+      const completing=t.stage!=='done';
+      return {...t, stage:completing?'done':'todo', completedAt:completing?new Date().toISOString():null};
+    }));
+  },[]);
+
+  const stageChange = useCallback((id,stage)=>{
+    setTasks(p=>p.map(t=>{
+      if(t.id!==id) return t;
+      const comp=stage==='done'&&t.stage!=='done';
+      return {...t, stage, completedAt:comp?new Date().toISOString():(stage!=='done'?null:t.completedAt)};
+    }));
+  },[]);
+
+  /* DnD */
+  const dStart = useCallback(id=>{ dragRef.current=id; setDragId(id); },[]);
+  const dOver  = useCallback(()=>{},[]);
+  const dDrop  = useCallback(tid=>{
+    const fid=dragRef.current;
+    if(!fid||fid===tid){ setDragId(null); return; }
+    setTasks(p=>{
+      const a=[...p];
+      const fi=a.findIndex(t=>t.id===fid), ti=a.findIndex(t=>t.id===tid);
+      if(fi<0||ti<0) return p;
+      const [m]=a.splice(fi,1); a.splice(ti,0,m); return a;
+    });
+    setDragId(null);
+  },[]);
+
+  /* Filter */
+  const filtered = useMemo(()=>tasks.filter(t=>{
+    const q=search.toLowerCase();
+    if(q&&!t.title.toLowerCase().includes(q)&&!(t.description||'').toLowerCase().includes(q)) return false;
+    if(fProj&&t.project!==fProj) return false;
+    if(fUrg&&t.urgency!==fUrg) return false;
+    return true;
+  }),[tasks,search,fProj,fUrg]);
+
+  const active = filtered.filter(t=>t.stage!=='done');
+  const done   = filtered.filter(t=>t.stage==='done');
+  const todayT = active.filter(t=>t.isToday);
+  const urgT   = active.filter(t=>t.urgency==='urgent'&&!t.isToday);
+  const otherT = active.filter(t=>t.urgency!=='urgent'&&!t.isToday);
+  const usedP  = useMemo(()=>[...new Set(tasks.map(t=>t.project).filter(Boolean))],[tasks]);
+
+  const cp = task => ({
+    task, onToggle:toggleTask, onEdit:setEditTask, onDelete:delTask,
+    onDragStart:dStart, onDragOver:dOver, onDrop:dDrop, isDragging:dragId===task.id,
+  });
+
+  const openForm = ()=>{ setEditTask(null); setShowForm(true); };
+  const closeForm= ()=>{ setShowForm(false); setEditTask(null); };
+
+  return (
+    <div style={{minHeight:'100vh'}}>
+
+      {/* ── Header ── */}
+      <header className="glass-header" style={{position:'sticky',top:0,zIndex:30}}>
+        <div style={{maxWidth:640,margin:'0 auto',padding:'12px 16px'}}>
+
+          {/* Title row */}
+          <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:10}}>
+            <div>
+              <h1 style={{fontSize:18,fontWeight:800,color:'#c7d2fe',letterSpacing:'-.02em'}}>
+                ✦ מנהל המשימות
+              </h1>
+              <p style={{fontSize:11,color:'#3b4a62',marginTop:1}}>
+                <span style={{color:'#6366f1',fontWeight:700}}>{completedToday}</span>
+                <span style={{marginRight:3}}>הושלמו היום</span>
+                {streak.count>1&&(
+                  <span style={{color:'#fb923c',fontWeight:700,marginRight:6}}>🔥 {streak.count} ימים ברצף</span>
+                )}
+              </p>
+            </div>
+
+            <div style={{display:'flex',gap:8,alignItems:'center'}}>
+              <button onClick={()=>setView(v=>v==='list'?'kanban':'list')}
+                className={`btn-ghost ${view==='kanban'?'active':''}`}
+                style={{padding:'7px 12px',fontSize:12,fontWeight:700,cursor:'pointer'}}>
+                {view==='kanban'?'📋 רשימה':'📊 קנבן'}
+              </button>
+              <button onClick={openForm} className="btn-prime"
+                style={{padding:'8px 14px',fontSize:13,cursor:'pointer'}}>
+                ＋ משימה
+              </button>
+            </div>
+          </div>
+
+          {/* Search + filters */}
+          <div style={{display:'flex',gap:8}}>
+            <div style={{position:'relative',flex:1}}>
+              <input type="search" placeholder="חיפוש..." value={search}
+                onChange={e=>setSearch(e.target.value)}
+                className="d-input" style={{width:'100%',padding:'8px 14px 8px 36px',fontSize:13}} />
+              <span style={{position:'absolute',left:12,top:'50%',transform:'translateY(-50%)',
+                            color:'#2d3a52',pointerEvents:'none',fontSize:13}}>🔍</span>
+            </div>
+            <div style={{position:'relative'}}>
+              <select value={fProj} onChange={e=>setFProj(e.target.value)}
+                className="d-select" style={{padding:'8px 26px 8px 12px',fontSize:12,maxWidth:120}}>
+                <option value="">📁 הכל</option>
+                {usedP.map(p=><option key={p} value={p}>{p}</option>)}
+              </select>
+              <span style={{position:'absolute',left:8,top:'50%',transform:'translateY(-50%)',color:'#2d3a52',pointerEvents:'none',fontSize:9}}>▾</span>
+            </div>
+            <div style={{position:'relative'}}>
+              <select value={fUrg} onChange={e=>setFUrg(e.target.value)}
+                className="d-select" style={{padding:'8px 26px 8px 10px',fontSize:12}}>
+                <option value="">🎯</option>
+                <option value="urgent">🔴</option>
+                <option value="medium">🟠</option>
+                <option value="low">🟢</option>
+              </select>
+              <span style={{position:'absolute',left:8,top:'50%',transform:'translateY(-50%)',color:'#2d3a52',pointerEvents:'none',fontSize:9}}>▾</span>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      {/* ── Main ── */}
+      <main style={{maxWidth:640,margin:'0 auto',padding:'16px 16px 100px'}}>
+
+        {view==='kanban' ? (
+          <KanbanBoard tasks={filtered} onEdit={setEditTask} onDelete={delTask} onStageChange={stageChange}/>
+        ) : (
+          <div style={{display:'flex',flexDirection:'column',gap:20}}>
+
+            {/* Today */}
+            {todayT.length>0&&(
+              <div className="today-wrap">
+                <div className="today-head" style={{padding:'10px 14px',display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+                  <span style={{fontSize:13,fontWeight:700,color:'#c7d2fe'}}>⭐ להיום · {todayT.length} משימות</span>
+                  {todayT.length>3&&(
+                    <span style={{fontSize:11,color:'#818cf8',background:'rgba(129,140,248,.12)',
+                                  borderRadius:20,padding:'2px 8px',fontWeight:600}}>
+                      💡 כדאי לצמצם ל-3
+                    </span>
+                  )}
+                </div>
+                <div style={{padding:'10px 12px',display:'flex',flexDirection:'column',gap:6}}>
+                  {todayT.map(t=><TaskCard key={t.id} {...cp(t)}/>)}
+                </div>
+              </div>
+            )}
+
+            {/* Urgent */}
+            {urgT.length>0&&(
+              <div>
+                <div className="sec-title">
+                  <span className="dot" style={{background:'#f87171'}}></span>
+                  דחוף · {urgT.length}
+                </div>
+                <div style={{display:'flex',flexDirection:'column',gap:6}}>
+                  {urgT.map(t=><TaskCard key={t.id} {...cp(t)}/>)}
+                </div>
+              </div>
+            )}
+
+            {/* Other */}
+            {otherT.length>0&&(
+              <div>
+                {(urgT.length>0||todayT.length>0)&&(
+                  <div className="sec-title">
+                    <span className="dot" style={{background:'#2d3a52'}}></span>
+                    שאר המשימות · {otherT.length}
+                  </div>
+                )}
+                <div style={{display:'flex',flexDirection:'column',gap:6}}>
+                  {otherT.map(t=><TaskCard key={t.id} {...cp(t)}/>)}
+                </div>
+              </div>
+            )}
+
+            {/* Empty */}
+            {active.length===0&&(
+              <div style={{textAlign:'center',paddingTop:64,paddingBottom:64}}>
+                {tasks.length===0?(
+                  <>
+                    <div style={{fontSize:52,marginBottom:14}}>✦</div>
+                    <p style={{fontSize:16,fontWeight:700,color:'#2d3a52',marginBottom:6}}>אין משימות עדיין</p>
+                    <p style={{fontSize:13,color:'#1e2d45'}}>לחץ על ＋ משימה כדי להתחיל</p>
+                  </>
+                ):(
+                  <>
+                    <div style={{fontSize:40,marginBottom:12}}>🔍</div>
+                    <p style={{fontSize:15,fontWeight:700,color:'#2d3a52'}}>לא נמצאו תוצאות</p>
+                    <p style={{fontSize:12,color:'#1e2d45',marginTop:4}}>נסה לשנות את הפילטרים</p>
+                  </>
+                )}
+              </div>
+            )}
+
+            {/* Done */}
+            {done.length>0&&(
+              <div>
+                <button onClick={()=>setShowDone(v=>!v)}
+                  style={{display:'flex',alignItems:'center',gap:6,fontSize:11,fontWeight:700,
+                          color:'#2d3a52',letterSpacing:'.06em',textTransform:'uppercase',
+                          background:'none',border:'none',cursor:'pointer',marginBottom:8,
+                          transition:'color .15s'}}
+                  onMouseEnter={e=>e.currentTarget.style.color='#3b4a62'}
+                  onMouseLeave={e=>e.currentTarget.style.color='#2d3a52'}>
+                  <span style={{transition:'transform .2s',transform:showDone?'rotate(90deg)':'none',fontSize:9}}>▶</span>
+                  ✅ הושלמו · {done.length}
+                </button>
+                {showDone&&(
+                  <div style={{display:'flex',flexDirection:'column',gap:6,opacity:.55}}>
+                    {done.map(t=><TaskCard key={t.id} {...cp(t)}/>)}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+      </main>
+
+      {/* ── FAB (mobile) ── */}
+      <button onClick={openForm} className="fab sm:hidden">＋</button>
+
+      {/* ── Saved ── */}
+      {saved&&(
+        <div className="saved-dot fade-up">✓ נשמר</div>
+      )}
+
+      {/* ── Overlays ── */}
+      {(showForm||editTask)&&(
+        <TaskForm task={editTask} projects={projects} onSave={handleSave} onClose={closeForm}/>
+      )}
+      {toast   &&<Toast msg={toast.msg} type={toast.type} onClose={()=>setToast(null)}/>}
+      {confetti&&<Confetti onDone={()=>setConfetti(false)}/>}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>
