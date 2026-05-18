@@ -16,12 +16,19 @@
             background: linear-gradient(to bottom, #1a202c, #2d3748);
         }
         .card-shadow {
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.15), 0 4px 6px -2px rgba(0, 0, 0, 0.08);
+        }
+        .day-card {
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .day-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2), 0 10px 10px -5px rgba(0, 0, 0, 0.1);
         }
         #toast {
             visibility: hidden;
             min-width: 250px;
-            background-color: #28a745; /* Green background */
+            background-color: #28a745;
             color: #fff;
             text-align: center;
             border-radius: 8px;
@@ -43,116 +50,176 @@
 <body class="bg-custom-gradient min-h-screen">
 
     <div id="app-container" class="container mx-auto p-4 md:p-6 max-w-2xl">
-        
+
         <header class="text-center mb-8">
-            <h1 id="main-title" class="text-4xl font-bold text-white mb-2">מסלול הטיול שלך לניו יורק</h1>
-            <p id="main-subtitle" class="text-lg text-gray-300">לחץ על הכפתור בכל יום כדי לפתוח את המסלול במפות</p>
+            <h1 id="main-title" class="text-4xl font-bold text-white mb-2"></h1>
+            <p class="text-lg text-gray-300">לחץ על הכפתור בכל יום כדי לפתוח את המסלול במפות</p>
         </header>
 
-        <!-- Instructions Card -->
-        <div id="instructions-card" class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 rounded-lg mb-6">
-            <h3 class="font-bold">איך לשתף את המסלול?</h3>
-            <ol class="list-decimal pr-5 mt-2">
+        <div class="bg-yellow-50 border-r-4 border-yellow-400 text-yellow-800 p-4 rounded-lg mb-6">
+            <h3 class="font-bold text-base mb-2">איך לשתף את המסלול?</h3>
+            <ol class="list-decimal pr-5 space-y-1 text-sm">
                 <li>לחץ על הכפתור הירוק "העתק קוד לשיתוף" למטה.</li>
-                <li>פתח אתר ליצירת קישורים, למשל <a href="https://codepen.io/pen/define" target="_blank" class="font-bold underline">CodePen</a>.</li>
+                <li>פתח אתר ליצירת קישורים, למשל <a href="https://codepen.io/pen/define" target="_blank" class="font-bold underline hover:text-yellow-900">CodePen</a>.</li>
                 <li>באתר שייפתח, הדבק את הקוד שהעתקת בחלונית ה-HTML.</li>
                 <li>שמור (Save) ושתף את הקישור שנוצר. הקישור הזה יעבוד תמיד!</li>
             </ol>
         </div>
 
-        <main id="itinerary-cards" class="space-y-6">
-            <!-- Itinerary cards will be dynamically inserted here -->
-        </main>
-        
-        <footer class="text-center mt-8">
-            <button id="share-button" class="bg-green-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-green-700 transition-colors">
+        <main id="itinerary-cards" class="space-y-6"></main>
+
+        <footer class="text-center mt-10 pb-6">
+            <button id="share-button" class="bg-green-600 text-white font-bold py-3 px-8 rounded-lg hover:bg-green-700 active:scale-95 transition-all">
                 העתק קוד לשיתוף
             </button>
-            <p id="footer-text" class="text-gray-400 text-sm mt-4">נבנה במיוחד עבור איתי. טיול נעים!</p>
+            <p id="footer-text" class="text-gray-400 text-sm mt-4">נבנה במיוחד עבור איתי. טיול נעים! ✈️</p>
         </footer>
 
     </div>
 
-    <div id="toast">הקוד הועתק בהצלחה!</div>
+    <div id="toast"></div>
 
     <script>
-        // --- DATA ---
-        const defaultItineraryData = {
+        const itineraryData = {
             title: "מסלול הטיול של איתי לניו יורק",
             days: [
-                { day: 1, title: "אמנות ומידטאון", date: "שבת, 26.07", points: ["🏛️ מוזיאון המטרופוליטן (The Met)", "🍪 <span class='font-bold'>אוכל טיקטוק:</span>&nbsp;עוגיות מ-Levain Bakery", "🌳 סנטרל פארק", "✨ טיימס סקוור", "🍔 <span class='font-bold'>אוכל טיקטוק:</span>&nbsp;המבורגר ב-7th Street Burger"], mapUrl: "https://www.google.com/maps/dir/Hilton+Garden+Inn+New+York%2FTimes+Square+South/Modern+Bread+and+Bagel,+Amsterdam+Avenue,+New+York,+NY/Metropolitan+Museum+of+Art/Levain+Bakery,+W+74th+St,+New+York,+NY/Central+Park/Times+Square/7th+Street+Burger,+West+45th+Street,+New+York,+NY" },
-                { day: 2, title: "גורדי שחקים ודאונטאון", date: "ראשון, 27.07", points: ["🎨 מוזיאון MoMA", "🏙️ תצפית טופ אוף דה רוק", "🥐 <span class='font-bold'>אוכל טיקטוק:</span>&nbsp;קרואסון \"Suprême\" ב-Lafayette", "🍰 <span class='font-bold'>אוכל טיקטוק:</span>&nbsp;עוגת גבינה יפנית ב-Keki", "🕊️ אנדרטת 9/11"], mapUrl: "https://www.google.com/maps/dir/Hilton+Garden+Inn+New+York%2FTimes+Square+South/Museum+of+Modern+Art/Top+of+the+Rock/Lafayette+Grand+Café+%26+Bakery/Keki+Modern+Cakes/9%2F11+Memorial+%26+Museum/Urban+Vegan+Kitchen" },
-                { day: 3, title: "טבע, היסטוריה וברוקלין", date: "שני, 28.07", points: ["🦕 מוזיאון הטבע", "🍪 <span class='font-bold'>אוכל טיקטוק:</span>&nbsp;העוגייה המקורית של Levain", "🌮 <span class='font-bold'>אוכל טיקטוק:</span>&nbsp;טאקו בירייה ב-Birria-Landia", "🌉 הליכה על גשר ברוקלין"], mapUrl: "https://www.google.com/maps/dir/Hilton+Garden+Inn+New+York%2FTimes+Square+South/American+Museum+of+Natural+History/Levain+Bakery,+West+74th+Street,+New+York,+NY/Birria-Landia,+Metropolitan+Avenue,+Brooklyn,+NY/Brooklyn+Bridge/Izzy's+Smokehouse,+Troy+Avenue,+Brooklyn,+NY" },
-                { day: 4, title: "שכונות מגניבות", date: "שלישי, 29.07", points: ["🚶 פארק הייליין (The High Line)", "🛍️ שוק צ'לסי (Chelsea Market)", "🥙 <span class='font-bold'>אוכל טיקטוק:</span>&nbsp;לחמים ומטבלים ב-Shukette", "⛲ וושינגטון סקוור פארק", "🎷 מופע ג'אז בערב"], mapUrl: "https://www.google.com/maps/dir/Hilton+Garden+Inn+New+York%2FTimes+Square+South/The+High+Line/Chelsea+Market/Shukette/Smør,+East+12th+Street,+New+York,+NY/Washington+Square+Park/Blue+Note+Jazz+Club" },
-                { day: 5, title: "חזרה הביתה", date: "רביעי, 30.07", points: ["נסיעה ברכבת של Amtrak בשעה 04:09 מתחנת Penn Station לניוארק, בדרך לשדה התעופה."], mapUrl: "https://www.google.com/maps/dir/Hilton+Garden+Inn+New+York%2FTimes+Square+South/Moynihan+Train+Hall", isFinalDay: true }
+                {
+                    day: 1,
+                    title: "אמנות ומידטאון",
+                    date: "שבת, 26.07",
+                    points: [
+                        "🏛️ מוזיאון המטרופוליטן (The Met)",
+                        "🍪 <span class='font-bold'>אוכל טיקטוק:</span>&nbsp;עוגיות מ-Levain Bakery",
+                        "🌳 סנטרל פארק",
+                        "✨ טיימס סקוור",
+                        "🍔 <span class='font-bold'>אוכל טיקטוק:</span>&nbsp;המבורגר ב-7th Street Burger"
+                    ],
+                    mapUrl: "https://www.google.com/maps/dir/Hilton+Garden+Inn+New+York%2FTimes+Square+South/Modern+Bread+and+Bagel,+Amsterdam+Avenue,+New+York,+NY/Metropolitan+Museum+of+Art/Levain+Bakery,+W+74th+St,+New+York,+NY/Central+Park/Times+Square/7th+Street+Burger,+West+45th+Street,+New+York,+NY"
+                },
+                {
+                    day: 2,
+                    title: "גורדי שחקים ודאונטאון",
+                    date: "ראשון, 27.07",
+                    points: [
+                        "🎨 מוזיאון MoMA",
+                        "🏙️ תצפית טופ אוף דה רוק",
+                        "🥐 <span class='font-bold'>אוכל טיקטוק:</span>&nbsp;קרואסון \"Suprême\" ב-Lafayette",
+                        "🍰 <span class='font-bold'>אוכל טיקטוק:</span>&nbsp;עוגת גבינה יפנית ב-Keki",
+                        "🕊️ אנדרטת 9/11"
+                    ],
+                    mapUrl: "https://www.google.com/maps/dir/Hilton+Garden+Inn+New+York%2FTimes+Square+South/Museum+of+Modern+Art/Top+of+the+Rock/Lafayette+Grand+Café+%26+Bakery/Keki+Modern+Cakes/9%2F11+Memorial+%26+Museum/Urban+Vegan+Kitchen"
+                },
+                {
+                    day: 3,
+                    title: "טבע, היסטוריה וברוקלין",
+                    date: "שני, 28.07",
+                    points: [
+                        "🦕 מוזיאון הטבע",
+                        "🍪 <span class='font-bold'>אוכל טיקטוק:</span>&nbsp;העוגייה המקורית של Levain",
+                        "🌮 <span class='font-bold'>אוכל טיקטוק:</span>&nbsp;טאקו בירייה ב-Birria-Landia",
+                        "🌉 הליכה על גשר ברוקלין"
+                    ],
+                    mapUrl: "https://www.google.com/maps/dir/Hilton+Garden+Inn+New+York%2FTimes+Square+South/American+Museum+of+Natural+History/Levain+Bakery,+West+74th+Street,+New+York,+NY/Birria-Landia,+Metropolitan+Avenue,+Brooklyn,+NY/Brooklyn+Bridge/Izzy%27s+Smokehouse,+Troy+Avenue,+Brooklyn,+NY"
+                },
+                {
+                    day: 4,
+                    title: "שכונות מגניבות",
+                    date: "שלישי, 29.07",
+                    points: [
+                        "🚶 פארק הייליין (The High Line)",
+                        "🛍️ שוק צ'לסי (Chelsea Market)",
+                        "🥙 <span class='font-bold'>אוכל טיקטוק:</span>&nbsp;לחמים ומטבלים ב-Shukette",
+                        "⛲ וושינגטון סקוור פארק",
+                        "🎷 מופע ג'אז בערב"
+                    ],
+                    mapUrl: "https://www.google.com/maps/dir/Hilton+Garden+Inn+New+York%2FTimes+Square+South/The+High+Line/Chelsea+Market/Shukette/Smør,+East+12th+Street,+New+York,+NY/Washington+Square+Park/Blue+Note+Jazz+Club"
+                },
+                {
+                    day: 5,
+                    title: "חזרה הביתה",
+                    date: "רביעי, 30.07",
+                    points: [
+                        "נסיעה ברכבת של Amtrak בשעה 04:09 מתחנת Penn Station לניוארק, בדרך לשדה התעופה."
+                    ],
+                    mapUrl: "https://www.google.com/maps/dir/Hilton+Garden+Inn+New+York%2FTimes+Square+South/Moynihan+Train+Hall",
+                    isFinalDay: true
+                }
             ]
         };
 
-        // --- UI RENDERING ---
-        function renderItinerary(itineraryData) {
-            const container = document.getElementById('itinerary-cards');
-            container.innerHTML = ''; 
-            document.getElementById('main-title').textContent = itineraryData.title;
-
-            itineraryData.days.forEach(day => {
-                const pointsHtml = day.points.map(point => {
-                    const emojiMatch = point.match(/(\p{Emoji_Presentation}|\p{Emoji})/u);
-                    const emoji = emojiMatch ? emojiMatch[0] : '➡️';
-                    const text = point.replace(/(\p{Emoji_Presentation}|\p{Emoji})\s*/u, '');
-                    return `<li class="flex items-start"><span class="ml-3 text-xl pt-1">${emoji}</span><span>${text}</span></li>`;
-                }).join('');
-                
-                const cardClass = day.isFinalDay ? "bg-gray-800 border border-yellow-400" : "bg-white";
-                const titleClass = day.isFinalDay ? "text-white" : "text-gray-800";
-                const dateClass = day.isFinalDay ? "text-gray-300" : "text-gray-500";
-                const textClass = day.isFinalDay ? "text-gray-200" : "text-gray-700";
-                const buttonClass = day.isFinalDay ? "bg-yellow-500 text-gray-900 hover:bg-yellow-600" : "bg-blue-600 text-white hover:bg-blue-700";
-                const buttonText = day.isFinalDay ? "פתח ניווט לתחנת הרכבת" : `פתח מפה ליום ${day.day}`;
-
-                const cardHtml = `
-                    <div class="${cardClass} rounded-xl p-6 card-shadow transition-transform transform hover:scale-105">
-                        <div class="flex justify-between items-center mb-4">
-                            <h2 class="text-2xl font-bold ${titleClass}">${day.title}</h2>
-                            <span class="text-sm font-semibold ${dateClass}">${day.date}</span>
-                        </div>
-                        <ul class="space-y-2 ${textClass} mb-5">${pointsHtml}</ul>
-                        <a href="${day.mapUrl}" target="_blank" class="block w-full text-center ${buttonClass} font-bold py-3 px-4 rounded-lg transition-colors">
-                            ${buttonText}
-                        </a>
-                    </div>`;
-                container.innerHTML += cardHtml;
-            });
+        function getCardStyles(isFinalDay) {
+            if (isFinalDay) {
+                return {
+                    card: "bg-gray-800 border border-yellow-400",
+                    title: "text-white",
+                    date: "text-gray-300",
+                    text: "text-gray-200",
+                    button: "bg-yellow-500 text-gray-900 hover:bg-yellow-600",
+                };
+            }
+            return {
+                card: "bg-white",
+                title: "text-gray-800",
+                date: "text-gray-500",
+                text: "text-gray-700",
+                button: "bg-blue-600 text-white hover:bg-blue-700",
+            };
         }
-        
-        // --- SHARING LOGIC (COPY CODE) ---
-        function handleShare() {
-            // Get the entire HTML content of the page
-            const pageHtml = document.documentElement.outerHTML;
-            
-            navigator.clipboard.writeText(pageHtml).then(() => {
-                showToast("הקוד הועתק בהצלחה!");
-            }, (err) => {
-                console.error('Could not copy text: ', err);
-                showToast("שגיאה בהעתקת הקוד.");
-            });
+
+        function buildPointsHtml(points) {
+            return points.map(point => {
+                const emojiMatch = point.match(/(\p{Emoji_Presentation}|\p{Emoji})/u);
+                const emoji = emojiMatch ? emojiMatch[0] : '➡️';
+                const text = point.replace(/(\p{Emoji_Presentation}|\p{Emoji})\s*/u, '');
+                return `<li class="flex items-start gap-3"><span class="text-xl pt-0.5 shrink-0">${emoji}</span><span>${text}</span></li>`;
+            }).join('');
+        }
+
+        function buildDayCard(day) {
+            const styles = getCardStyles(day.isFinalDay);
+            const buttonText = day.isFinalDay
+                ? "פתח ניווט לתחנת הרכבת"
+                : `פתח מפה ליום ${day.day}`;
+
+            return `
+                <div class="day-card ${styles.card} rounded-xl p-6 card-shadow">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-2xl font-bold ${styles.title}">${day.title}</h2>
+                        <span class="text-sm font-semibold ${styles.date} bg-opacity-10 bg-gray-500 px-3 py-1 rounded-full">${day.date}</span>
+                    </div>
+                    <ul class="space-y-2 ${styles.text} mb-5">${buildPointsHtml(day.points)}</ul>
+                    <a href="${day.mapUrl}" target="_blank" rel="noopener noreferrer"
+                       class="block w-full text-center ${styles.button} font-bold py-3 px-4 rounded-lg transition-colors">
+                        ${buttonText}
+                    </a>
+                </div>`;
+        }
+
+        function renderDays(data) {
+            document.getElementById('main-title').textContent = data.title;
+            const container = document.getElementById('itinerary-cards');
+            container.innerHTML = '';
+            data.days.forEach(day => container.insertAdjacentHTML('beforeend', buildDayCard(day)));
+        }
+
+        function copyPageCode() {
+            navigator.clipboard.writeText(document.documentElement.outerHTML).then(
+                () => showToast("הקוד הועתק בהצלחה!"),
+                () => showToast("שגיאה בהעתקת הקוד.")
+            );
         }
 
         function showToast(message) {
             const toast = document.getElementById('toast');
             toast.textContent = message;
             toast.classList.add('show');
-            setTimeout(() => { toast.classList.remove('show'); }, 3000);
+            setTimeout(() => toast.classList.remove('show'), 3000);
         }
 
-        // --- INITIALIZATION ---
-        function main() {
-            renderItinerary(defaultItineraryData);
-            document.getElementById('share-button').addEventListener('click', handleShare);
-        }
-        
-        main();
-
+        document.addEventListener('DOMContentLoaded', () => {
+            renderDays(itineraryData);
+            document.getElementById('share-button').addEventListener('click', copyPageCode);
+        });
     </script>
 </body>
 </html>
-
